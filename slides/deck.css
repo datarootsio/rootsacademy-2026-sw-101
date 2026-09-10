@@ -1,0 +1,428 @@
+/* Field manual deck – shared styles for the Software Development 101 decks. */
+
+@import "tokens.css";
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #cdcbc3;
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Stage: locks every slide to a 16:9 canvas so type scales predictably ── */
+
+#stage {
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+#deck {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: 3.9cqw 5cqw 5.6cqw;
+  font-size: 2.05cqw;
+  line-height: 1.45;
+}
+
+.slide[data-active] { display: flex; }
+
+/* ── Slide chrome ── */
+
+.chrome {
+  position: absolute;
+  top: 1.7cqw;
+  left: 5cqw;
+  right: 5cqw;
+  display: flex;
+  align-items: baseline;
+  gap: 1.1cqw;
+  font-size: 1.15cqw;
+  color: var(--ink-soft);
+}
+
+.chrome .code {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--track-on);
+  background: var(--track);
+  padding: 0.15cqw 0.5cqw;
+  letter-spacing: 0.04em;
+}
+
+.chrome .where { font-weight: 500; }
+.chrome .idx { margin-left: auto; font-family: var(--mono); }
+
+/* Day rail: position across the whole 8 hours, not just this deck. */
+
+#rail {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  height: 2.6cqw;
+  border-top: 0.15cqw solid var(--rule);
+  font-size: 1.05cqw;
+}
+
+#rail .seg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: 1cqw;
+  color: var(--ink-soft);
+  overflow: hidden;
+  border-right: 0.15cqw solid var(--rule);
+}
+
+#rail .seg:last-child { border-right: 0; }
+#rail .seg > span { position: relative; z-index: 1; }
+
+#rail .seg::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--fill, 0%);
+  background: var(--seg);
+  opacity: 0.18;
+  transition: width 220ms ease;
+}
+
+#rail .seg[data-here] { color: var(--seg); font-weight: 600; }
+
+/* On a full-bleed opener the rail rides on top of the ink. */
+#deck[data-opener] #rail { border-top-color: rgba(255, 255, 255, 0.35); }
+#deck[data-opener] #rail .seg { color: rgba(255, 255, 255, 0.7); border-right-color: rgba(255, 255, 255, 0.35); }
+#deck[data-opener] #rail .seg::before { background: #fff; opacity: 0.22; }
+#deck[data-opener] #rail .seg[data-here] { color: #fff; }
+
+/* ── Typography ── */
+
+h1, h2, h3 { margin: 0; font-weight: 800; letter-spacing: -0.022em; line-height: 1.02; }
+
+.slide h2 {
+  font-size: 3.6cqw;
+  max-width: 30ch;
+}
+
+.slide h3 {
+  font-size: 2.15cqw;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.slide h2 + .lead, .slide h2 + p { margin-top: 1.3cqw; }
+
+.lead {
+  font-size: 2.45cqw;
+  line-height: 1.3;
+  max-width: 40ch;
+  color: var(--ink);
+}
+
+.slide p { margin: 0 0 1cqw; max-width: 62ch; }
+.slide p:last-child { margin-bottom: 0; }
+.dim { color: var(--ink-soft); }
+.body { margin-top: 2cqw; display: flex; flex-direction: column; gap: 1.6cqw; min-height: 0; }
+.cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2.2cqw;
+  align-items: start;
+  min-height: 0;
+}
+
+.cols.wide-left { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+.cols.wide-right { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); }
+.cols.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+ul, ol { margin: 0; padding-left: 1.6cqw; max-width: 56ch; }
+li { margin-bottom: 0.65cqw; }
+li:last-child { margin-bottom: 0; }
+li::marker { color: var(--track); font-weight: 700; }
+
+/* Markers are positioned, not flexed: flex would turn every inline
+   <code> and <b> in the item into a flex item and break the text flow. */
+ul.bare { list-style: none; padding-left: 0; }
+ul.bare > li { position: relative; padding-left: 2cqw; }
+ul.bare > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.66em;
+  width: 1.1cqw;
+  height: 0.2cqw;
+  background: var(--track);
+}
+
+b, strong { font-weight: 700; }
+
+kbd, code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: #d3d1c8;
+  padding: 0.08em 0.3em;
+}
+
+kbd { border-bottom: 0.15cqw solid var(--rule); }
+
+a { color: var(--track); text-decoration-thickness: 0.08em; text-underline-offset: 0.16em; }
+
+/* ── Code plates ── */
+
+.plate {
+  position: relative;
+  background: var(--plate);
+  color: #dfe3e8;
+  padding: 1.3cqw 1.5cqw;
+  overflow: hidden;
+  border-left: 0.35cqw solid var(--track);
+}
+
+.plate pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--code);
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+/* Code size follows the space available, not the author's memory. */
+.plate { --code: 1.78cqw; }
+.cols .plate { --code: 1.42cqw; }
+.plate.sm, .cols .plate.sm { --code: 1.42cqw; }
+.plate.lg, .cols .plate.lg { --code: 2.2cqw; }
+.plate.xs, .cols .plate.xs { --code: 1.28cqw; }
+.plate.xs pre { line-height: 1.42; }
+
+/* The corrected half of a before/after pair. */
+.plate.good { border-left-color: var(--ok); }
+
+.plate .cap {
+  display: block;
+  margin-bottom: 0.7cqw;
+  font-family: var(--mono);
+  font-size: 1.05cqw;
+  color: #8a95a1;
+}
+
+.copy {
+  position: absolute;
+  top: 0.7cqw;
+  right: 0.7cqw;
+  border: 0;
+  border-radius: 0.3cqw;
+  background: #333d49;
+  color: #a9b4c0;
+  font: inherit;
+  font-size: 1cqw;
+  padding: 0.2cqw 0.6cqw;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.plate:hover .copy, .copy:focus-visible { opacity: 1; }
+.copy:hover { background: #3d4855; color: #e8edf2; }
+
+/* Output plate: what the machine answers back. */
+.out {
+  background: var(--panel);
+  color: var(--ink);
+  border-left: 0.35cqw solid var(--rule);
+  padding: 1.1cqw 1.3cqw;
+  font-family: var(--mono);
+  font-size: 1.6cqw;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.out .cap { display: block; margin-bottom: 0.5cqw; font-size: 1.05cqw; color: var(--ink-soft); }
+
+/* ── Callouts ── */
+
+.note {
+  border-left: 0.35cqw solid var(--track);
+  padding: 0.2cqw 0 0.2cqw 1.1cqw;
+  max-width: 58ch;
+}
+
+.trap {
+  background: #f2e4d9;
+  border-left: 0.35cqw solid var(--git);
+  padding: 1cqw 1.2cqw;
+  max-width: 60ch;
+}
+
+.trap b { color: var(--git); }
+
+/* ── Tables ── */
+
+table { width: 100%; border-collapse: collapse; font-size: 1.62cqw; }
+th, td { text-align: left; padding: 0.55cqw 0.8cqw 0.55cqw 0; border-bottom: 0.12cqw solid var(--rule); vertical-align: top; }
+th { font-weight: 700; border-bottom-width: 0.2cqw; border-bottom-color: var(--ink); }
+td code, th code { background: none; padding: 0; }
+table.sm { font-size: 1.44cqw; }
+table.xs { font-size: 1.24cqw; }
+
+/* ── Track opener ── */
+
+.slide.opener {
+  background: var(--track);
+  color: var(--track-on);
+  justify-content: center;
+  padding: 5cqw;
+}
+
+.slide.opener h1 { font-size: 12cqw; letter-spacing: -0.04em; }
+.slide.opener code { background: rgba(255, 255, 255, 0.2); color: inherit; }
+.slide.opener .sub { margin-top: 1.5cqw; font-size: 2.2cqw; font-weight: 500; max-width: 46ch; opacity: 0.85; }
+.slide.opener .plan { margin-top: 3cqw; display: flex; gap: 3cqw; font-size: 1.5cqw; }
+.slide.opener .plan div { border-top: 0.25cqw solid currentColor; padding-top: 0.7cqw; opacity: 0.85; }
+
+/* ── Section divider ── */
+
+.slide.part { justify-content: center; }
+.slide.part h1 { font-size: 6.5cqw; max-width: 26ch; }
+.slide.part .marker { font-family: var(--mono); font-size: 1.6cqw; color: var(--track); margin-bottom: 1cqw; }
+
+/* ── Exercise slides ── */
+
+.slide.task { background: var(--panel); font-size: 1.85cqw; }
+.slide.task h2 { font-size: 3.2cqw; }
+.slide.task .badge {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  margin-top: 0.9cqw;
+  background: var(--track);
+  color: var(--track-on);
+  font-weight: 700;
+  font-size: 1.3cqw;
+  padding: 0.3cqw 0.8cqw;
+  margin-bottom: 1.2cqw;
+}
+
+.tasks { counter-reset: t; list-style: none; padding: 0; max-width: 60ch; }
+.tasks > li {
+  position: relative;
+  padding-left: 3.1cqw;
+  margin-bottom: 0.85cqw;
+  line-height: 1.36;
+}
+
+.tasks > li::before {
+  counter-increment: t;
+  content: counter(t);
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 2.1cqw;
+  height: 2.1cqw;
+  display: grid;
+  place-items: center;
+  background: var(--track);
+  color: var(--track-on);
+  font-family: var(--mono);
+  font-size: 1.2cqw;
+  font-weight: 600;
+}
+
+/* ── Overview overlay ── */
+
+#toc {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(27, 34, 42, 0.96);
+  color: var(--panel);
+  padding: 3vh 4vw;
+  overflow-y: auto;
+  font-size: clamp(12px, 1.5vh, 17px);
+}
+
+#toc[hidden] { display: none; }
+#toc h2 { font-size: 2.6em; margin-bottom: 0.8em; }
+#toc ol { columns: 3; column-gap: 3vw; list-style: none; padding: 0; max-width: none; }
+#toc li { margin-bottom: 0.35em; break-inside: avoid; }
+#toc button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0.2em 0.4em;
+  cursor: pointer;
+}
+#toc button:hover, #toc button:focus-visible { background: var(--track); color: #fff; }
+#toc button .n { font-family: var(--mono); opacity: 0.55; margin-right: 0.7em; }
+#toc li.is-part button { font-weight: 700; margin-top: 0.8em; border-top: 1px solid #4a545f; padding-top: 0.5em; }
+
+#help {
+  position: absolute;
+  bottom: 3.4cqw;
+  right: 5cqw;
+  z-index: 40;
+  font-size: 1.15cqw;
+  font-family: var(--mono);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#help[hidden] { display: none; }
+
+:focus-visible { outline: 0.25cqw solid var(--track); outline-offset: 0.2cqw; }
+
+/* ── Syntax highlighting ── */
+
+.tok-kw  { color: #f2969b; }
+.tok-bi  { color: #8fd0f5; }
+.tok-str { color: #b9dea0; }
+.tok-num { color: #f5cd8b; }
+.tok-com { color: #7c8794; font-style: italic; }
+.tok-dec { color: #d6b3f5; }
+.tok-fn  { color: #f5cd8b; }
+.tok-op  { color: #b8c2cd; }
+.tok-pr  { color: #6ec9a8; user-select: none; }
+.tok-add { color: #8fd68f; }
+.tok-del { color: #f0928f; }
+.tok-hd  { color: #8fd0f5; font-weight: 600; }
+.tok-flg { color: #d6b3f5; }
+
+.out .tok-str { color: #2f6a1f; }
+.out .tok-num { color: #7a4d00; }
+.out .tok-com { color: var(--ink-soft); }
+
+/* ── Print / PDF export ── */
+
+@media print {
+  @page { size: 297mm 167mm; margin: 0; }
+  html, body { background: #fff; height: auto; }
+  #stage { display: block; height: auto; overflow: visible; }
+  #deck { width: 297mm; height: 167mm; aspect-ratio: auto; }
+  .slide { display: flex !important; position: relative; break-after: page; height: 167mm; }
+  #rail, #help, #toc, .copy { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { transition: none !important; }
+}

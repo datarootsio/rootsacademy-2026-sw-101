@@ -1,0 +1,3810 @@
+<title>Python 101</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="deck.css">
+<script>window.DECK = { track: "py", code: "PY", title: "Python 101" };</script>
+
+<div id="stage"><main id="deck">
+
+<section class="slide opener" data-title="Python">
+  <h1>Python</h1>
+  <p class="sub">From <code>print("hello")</code> to a nightly job you would be happy to hand over.</p>
+  <div class="plan">
+    <div>Basics, functions, data structures</div>
+    <div>Classes &amp; design principles</div>
+    <div>Errors, packages, tests</div>
+    <div>Generators &amp; a real pipeline</div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Getting oriented">
+  <div class="marker">Section 1</div>
+  <h1>Getting oriented</h1>
+</section>
+
+<section class="slide" data-title="What Python is">
+  <h2>A language optimised for the person reading it</h2>
+  <div class="body cols wide-left">
+    <div>
+      <ul class="bare">
+        <li>Interpreted, dynamically typed, garbage collected. No compile step, no type declarations, no manual memory.</li>
+        <li>Indentation <em>is</em> the syntax. Whitespace is not cosmetic.</li>
+        <li>Batteries included: a large standard library plus ~600k packages on PyPI.</li>
+        <li>Slow at arithmetic, fast at everything that matters – because the heavy loops live in C (numpy, pandas, polars, torch).</li>
+      </ul>
+    </div>
+    <div class="plate">
+      <span class="cap">the trade you are making</span>
+      <pre data-lang="python">
+# Java
+List&lt;String&gt; names = new ArrayList&lt;&gt;();
+names.add("Charlotte");
+
+# Python
+names = ["Charlotte"]
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Four ways to run it">
+  <h2>Four ways to run Python</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">1 – the REPL, for questions</span>
+      <pre data-lang="console">
+$ python3
+&gt;&gt;&gt; 2 + 2
+4
+&gt;&gt;&gt; exit()
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">2 – a script, for real work</span>
+      <pre data-lang="console">
+$ python3 circle.py
+Enter the radius: 3
+Area: 28.27
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">3 – a notebook, for exploring</span>
+      <pre data-lang="text">
+Jupyter / Colab: cells you run
+out of order, output kept inline.
+Great for analysis, bad for shipping.
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">4 – one-off, for a shell pipeline</span>
+      <pre data-lang="console">
+$ python3 -c "print(2**64)"
+18446744073709551616
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Four ways to run it">
+  <h2>Today you will use all four</h2>
+  <div class="body">
+    <p class="lead">The notebook teaches. The script is what you get paid for.</p>
+    <table>
+      <tr><th>Use</th><th>Notebook</th><th>Script</th></tr>
+      <tr><td>Trying an idea on real data</td><td>yes</td><td>painful</td></tr>
+      <tr><td>Reviewable in a pull request</td><td>no – JSON noise</td><td>yes</td></tr>
+      <tr><td>Runs the same way twice</td><td>only if you restart</td><td>yes</td></tr>
+      <tr><td>Runs on a schedule in production</td><td>no</td><td>yes</td></tr>
+    </table>
+    <div class="note"><p>Rule of thumb: explore in a notebook, then move anything you want to keep into a <code>.py</code> file before you forget how it worked.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="How it runs">
+  <h2>What happens between your file and the CPU</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+import dis
+
+def total(prices):
+    return sum(p * 1.21 for p in prices)
+
+dis.dis(total)
+</pre>
+      <div class="out" style="margin-top:1cqw"><span class="cap">bytecode, abridged</span>LOAD_GLOBAL   sum
+LOAD_CONST    &lt;genexpr&gt;
+MAKE_FUNCTION
+CALL          1
+RETURN_VALUE</div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>CPython compiles your source to <b>bytecode</b> – that is what <code>__pycache__</code> holds – and a loop written in C runs it. That loop is the "Python is slow" you have heard about.</li>
+        <li>The <b>GIL</b> lets one thread run bytecode at a time. Threads help while you wait on a network or a disk, never with arithmetic. For CPU work, use processes.</li>
+        <li><code>numpy</code> and <code>polars</code> are fast because one instruction hands a whole array to compiled code. Keep the <em>inner loop</em> out of Python, not Python out of your program.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Basics">
+  <div class="marker">Section 2</div>
+  <h1>Basics</h1>
+</section>
+
+<section class="slide" data-title="Variables">
+  <h2>A variable is a name pointing at an object</h2>
+  <div class="body cols">
+    <div class="plate">
+      <pre data-lang="python">
+an_int = 5
+a_float = 4.2
+a_complex = 1 + 5j
+a_bool = True
+nothing = None
+
+print(type(an_int))
+print(type(a_float))
+</pre>
+    </div>
+    <div>
+      <div class="out">
+        <span class="cap">output</span>&lt;class 'int'&gt;
+&lt;class 'float'&gt;</div>
+      <div class="note" style="margin-top:1.4cqw">
+        <p>You never declare a type. The name is a label; the object it points to knows its own type.</p>
+        <p><code>an_int = "now a string"</code> is legal. It is also usually a bug.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Variables">
+  <h2>Naming is the cheapest documentation you will ever write</h2>
+  <div class="body cols">
+    <div>
+      <ul class="bare">
+        <li><code>snake_case</code> for variables and functions, <code>PascalCase</code> for classes, <code>UPPER_SNAKE</code> for constants.</li>
+        <li>Names describe the value, not the type: <code>radius</code>, not <code>float_input_1</code>.</li>
+        <li>Never shadow a builtin. <code>list</code>, <code>dict</code>, <code>sum</code>, <code>type</code>, <code>id</code>, <code>input</code>, <code>str</code> are functions you will want.</li>
+      </ul>
+    </div>
+    <div class="plate sm">
+      <span class="cap">this breaks two slides from now</span>
+      <pre data-lang="python">
+sum = 0
+for n in [1, 2, 3]:
+    sum = sum + n
+
+# ...later in the same file
+total = sum([4, 5, 6])
+# TypeError: 'int' object is not callable
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Numbers">
+  <h2>Numbers</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="python">
+7 / 2      # 3.5   true division
+7 // 2     # 3     floor division
+7 % 2      # 1     remainder
+2 ** 10    # 1024  power
+-7 // 2    # -4    rounds down, not toward zero
+
+0.1 + 0.2  # 0.30000000000000004
+round(0.1 + 0.2, 2)   # 0.3
+
+1_000_000  # underscores are just spacing
+</pre>
+    </div>
+    <div class="trap">
+      <p><b>Floats are approximations.</b> <code>0.1 + 0.2 == 0.3</code> is <code>False</code> in every mainstream language.</p>
+      <p>For money or anything audited, use <code>decimal.Decimal</code> or integer cents. Never compare floats with <code>==</code>; compare a rounded value or a tolerance.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Money">
+  <h2>Money is not a float</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+0.1 + 0.2 == 0.3        # False
+round(2.675, 2)         # 2.67, not 2.68
+
+from decimal import Decimal
+Decimal("0.1") + Decimal("0.2")   # 0.3
+Decimal("19.99") * 3              # 59.97
+
+Decimal(0.1)     # 0.10000000000000000555...
+                 # a float in, a broken Decimal out
+
+from math import isclose, fsum
+isclose(0.1 + 0.2, 0.3)      # True
+fsum(measurements)           # no drift
+</pre>
+    </div>
+    <div>
+      <table class="xs">
+        <tr><th>What you have</th><th>What to use</th></tr>
+        <tr><td>Prices, invoices, anything audited</td><td><code>Decimal</code> built <b>from strings</b>, or integer cents</td></tr>
+        <tr><td>Measurements, model features</td><td><code>float</code>, compared with <code>isclose</code></td></tr>
+        <tr><td>Quantities, ids, counts</td><td><code>int</code></td></tr>
+      </table>
+      <div class="trap" style="margin-top:1.3cqw">
+        <p><b>The bug that reaches the customer:</b> a database returns <code>Decimal</code>, someone casts it to <code>float</code> to do arithmetic, and the invoice total is off by a cent per thousand lines. Keep it a <code>Decimal</code> the whole way through, and format only when you print.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Strings">
+  <h2>Strings</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+a = "Hello, world"
+b = 'Single quotes are identical'
+c = "She said \"stop\""
+d = 'She said "stop"'      # nicer
+
+multi = """spans
+several
+lines"""
+
+"ab" + "cd"     # 'abcd'
+"ab" * 3        # 'ababab'
+len("ab")       # 2
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">methods you will use weekly</span>
+      <pre data-lang="python">
+s = "  Data Roots  "
+
+s.strip()           # 'Data Roots'
+s.lower()           # '  data roots  '
+s.strip().split()   # ['Data', 'Roots']
+"-".join(["a", "b"])# 'a-b'
+s.replace("Roots", "Lake")
+"Data" in s         # True
+s.strip().startswith("Data")   # True
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Strings">
+  <h2>Strings are immutable</h2>
+  <div class="body cols wide-left">
+    <div class="plate">
+      <pre data-lang="python">
+name = "nico"
+name[0] = "N"
+# TypeError: 'str' object does not
+# support item assignment
+
+name = "N" + name[1:]   # make a new one
+print(name)             # Nico
+</pre>
+    </div>
+    <div>
+      <p>Every string method <b>returns a new string</b> and leaves the original alone.</p>
+      <div class="trap">
+        <p><b>The classic silent bug:</b></p>
+        <div style="font-family:var(--mono);font-size:1.35cqw;margin-top:0.6cqw">
+s.strip()        <span class="dim"># does nothing</span><br>
+s = s.strip()    <span class="dim"># does the thing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Text and bytes">
+  <h2>Text is not bytes, and the default encoding is not yours</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+"café".encode("utf-8")   # b'caf\xc3\xa9'
+b"caf\xc3\xa9".decode("utf-8")   # 'café'
+
+len("café")                   # 4 characters
+len("café".encode("utf-8"))   # 5 bytes
+
+open("sales.csv")                    # your locale
+open("sales.csv", encoding="utf-8")  # say it
+Path("sales.csv").read_text(encoding="utf-8")
+
+# UnicodeDecodeError: 'utf-8' codec can't
+# decode byte 0xe9 in position 3141
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Inside your program, everything is <code>str</code>. Bytes live only at the boundary, and every boundary needs a named encoding.</li>
+        <li>Your laptop defaults to UTF-8; the container may not. The same script works locally and dies in production on one accented name. <b>Always pass <code>encoding=</code>.</b></li>
+        <li>A vendor exporting from Excel sends <code>cp1252</code>. Use their encoding, or <code>errors="replace"</code> – and log how many characters you lost.</li>
+      </ul>
+      <div class="note"><p><code>"café" == "café"</code> can be <code>False</code>: é has two spellings. <code>unicodedata.normalize("NFC", s)</code> before comparing names.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="f-strings">
+  <h2>f-strings: the only string formatting you need</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+name = "nico"
+age = 24
+
+# the tedious way
+"Name: " + name + " Age: " + str(age)
+
+# the way
+f"Name: {name} Age: {age}"
+
+# any expression fits inside the braces
+f"Next year: {age + 1}"
+f"Shouting: {name.upper()}"
+</pre>
+    </div>
+    <div>
+      <p>Put an <code>f</code> before the quote, then <code>{}</code> around anything you want evaluated.</p>
+      <ul class="bare">
+        <li>No <code>str()</code> calls, no <code>+</code> chains, no argument order to get wrong.</li>
+        <li>Reads in the same order as the output.</li>
+        <li>Faster than <code>%</code>, <code>.format()</code> and concatenation.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="f-strings">
+  <h2>Two f-string tricks worth learning now</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">= prints the expression too</span>
+      <pre data-lang="python">
+cars = ["bmw", "merc"]
+count = 2
+
+print(f"{count=}")
+print(f"{cars=}")
+print(f"{count * 10=}")
+</pre>
+      <div class="out" style="margin-top:1cqw">count=2
+cars=['bmw', 'merc']
+count * 10=20</div>
+    </div>
+    <div class="plate sm">
+      <span class="cap">: formats the value</span>
+      <pre data-lang="python">
+pi = 3.14159265
+print(f"{pi:.3f}")        # 3.142
+print(f"{1234567:,}")     # 1,234,567
+print(f"{0.916:.1%}")     # 91.6%
+print(f"{'word':&gt;10}|")   # '      word|'
+print(f"{'word':-^10}")   # '---word---'
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.4cqw"><p><code>f"{x=}"</code> replaces most of your <code>print</code> debugging. Reach for it before you reach for a debugger.</p></div>
+</section>
+
+<section class="slide" data-title="Truthiness">
+  <h2>Everything has a truth value</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="python">
+# these are all False
+bool(0); bool(0.0); bool("")
+bool([]); bool({}); bool(()); bool(None)
+
+# everything else is True
+bool(-1); bool("0"); bool([0]); bool(" ")
+
+items = []
+if items:
+    print("has items")
+else:
+    print("empty")          # this one
+</pre>
+    </div>
+    <div>
+      <p>So write <code>if items:</code> rather than <code>if len(items) &gt; 0:</code>.</p>
+      <div class="trap">
+        <p><b>But not for <code>None</code>.</b> <code>if count:</code> is False for both <code>0</code> and <code>None</code>. When you mean "was it set at all", say <code>if count is not None:</code>.</p>
+      </div>
+      <p class="dim">Use <code>is</code> / <code>is not</code> only with <code>None</code>, <code>True</code>, <code>False</code>. Everywhere else, <code>==</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Collections">
+  <h2>Four containers, four jobs</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th></th><th>List</th><th>Tuple</th><th>Set</th><th>Dict</th></tr>
+      <tr><td>Written</td><td><code>[1, 2, 2]</code></td><td><code>(1, 2, 2)</code></td><td><code>{1, 2}</code></td><td><code>{"a": 1}</code></td></tr>
+      <tr><td>Change after creation</td><td>yes</td><td><b>no</b></td><td>yes</td><td>yes</td></tr>
+      <tr><td>Keeps insertion order</td><td>yes</td><td>yes</td><td><b>no</b></td><td>yes</td></tr>
+      <tr><td>Duplicates</td><td>yes</td><td>yes</td><td><b>no</b></td><td>keys: no</td></tr>
+      <tr><td>Access by</td><td>index</td><td>index</td><td>-</td><td>key</td></tr>
+      <tr><td>Reach for it when</td><td>an ordered pile of things</td><td>a fixed record, or a return of two values</td><td>membership, dedupe</td><td>look something up by name</td></tr>
+    </table>
+    <div class="note"><p>An empty <code>{}</code> is a <b>dict</b>, not a set. For an empty set: <code>set()</code>.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Collections">
+  <h2>All four in eight lines</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+a_list = ["zzz", 1, 5.0]
+a_list.append("hey")
+print(a_list[1], a_list[-1])
+
+a_tuple = ("bbb", 4.2)
+print(a_tuple[1])
+
+a_set = {1, 2, 3, 4, 4, 4}
+print(a_set)
+
+person = {"name": "nico", "age": 24}
+print(person["name"])
+</pre>
+    </div>
+    <div>
+      <div class="out"><span class="cap">output</span>1 hey
+4.2
+{1, 2, 3, 4}
+nico</div>
+      <p style="margin-top:1.4cqw">A list can hold mixed types. That is allowed, and almost always a design smell – if the positions mean different things, you want a dict or a class.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Type conversion">
+  <h2>Converting between types</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+str(4)          # '4'
+int("44587")    # 44587
+float("4.2")    # 4.2
+int(4.9)        # 4  – truncates, no rounding
+list("abc")     # ['a', 'b', 'c']
+str({"a": 1})   # "{'a': 1}"
+
+int("4.2")
+# ValueError: invalid literal for
+# int() with base 10: '4.2'
+</pre>
+    </div>
+    <div class="trap">
+      <p><b><code>input()</code> always gives you a string.</b></p>
+      <div style="font-family:var(--mono);font-size:1.35cqw;margin:0.6cqw 0">
+age = input("Age: ")<br>
+age + 1<br>
+<span class="dim"># TypeError: can only concatenate</span><br>
+<span class="dim"># str (not "int") to str</span>
+      </div>
+      <p>Convert at the edge, right where the value enters your program:</p>
+      <div style="font-family:var(--mono);font-size:1.35cqw">age = int(input("Age: "))</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Parse at the edge">
+  <h2>Convert once, at the door</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">one function owns the boundary</span>
+      <pre data-lang="python">
+def parse_row(raw: dict[str, str]) -&gt; Sale:
+    """A CSV row as text -&gt; a Sale, or ValueError."""
+    return Sale(
+        order_id=raw["id"].strip(),
+        day=date.fromisoformat(raw["date"]),
+        amount=Decimal(raw["amount"]),
+        country=raw["country"].strip().upper(),
+    )
+</pre>
+    </div>
+    <div>
+      <p>Everything entering your program is text: CSV cells, JSON, query strings, <code>input()</code>, environment variables, flags.</p>
+      <ul class="bare">
+        <li>Convert to real types <b>once</b>, in one place. The two hundred lines behind that door then never write <code>float(x)</code> or <code>isinstance</code>.</li>
+        <li>It is also where a bad value becomes a clear error, with a line number, instead of a <code>TypeError</code> four functions later.</li>
+        <li>A row you cannot parse is <em>data</em>, not a crash. Count it and report it – skipping silently is how a job quietly loses 3% of revenue.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: basics">
+  <div class="badge">Exercises, 10 min</div>
+  <h2>Basics</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li>Read a circle radius from the user and print its area and circumference. <code>from math import pi</code>.</li>
+      <li>Read a temperature in Celsius and print it in Fahrenheit, using only augmented assignment (<code>*=</code>, <code>+=</code>) – no new variables. <span class="dim">°F = 1.8 × °C + 32</span></li>
+      <li>Read a first name and a last name, then print a login of the form <code>c.debaere</code> – lowercase, first initial, no spaces.</li>
+      <li>Print <code>0.1 + 0.2</code> to 2, 5 and 20 decimal places with one f-string each. Explain what you see.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">exercises/python/01_basics.py</span>
+      <pre data-lang="console">
+$ cd exercises/python
+$ python3 01_basics.py
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Each file checks itself with <code>assert</code>. Green means done. Stuck for more than five minutes? Ask – that is what today is for.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Conditionals">
+  <h2>Conditionals</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+age = 8
+
+if age &gt; 10:
+    print("Older than 10")
+elif age &gt; 5:
+    print("Between 6 and 10")
+else:
+    print("5 or younger")
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>The colon opens a block; the <b>indentation</b> is the block. Four spaces, always.</li>
+        <li><code>elif</code> chains are checked top to bottom and stop at the first hit – so order your conditions from most specific to least.</li>
+        <li><code>else</code> is optional. If nothing matches and there is no <code>else</code>, nothing happens.</li>
+      </ul>
+      <div class="note"><p>Mixing tabs and spaces is a <code>TabError</code>. Let your editor insert spaces.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Conditionals">
+  <h2>Combining conditions</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+age = 4
+
+# and / or / not – words, not symbols
+if age &gt; 1 and age &lt; 5:
+    print("toddler")
+
+# comparison chaining: same thing, better
+if 1 &lt; age &lt; 5:
+    print("toddler")
+
+if not (age &lt; 0):
+    print("plausible")
+
+# one-line choice
+label = "adult" if age &gt;= 18 else "minor"
+</pre>
+    </div>
+    <div>
+      <p><code>1 &lt; age &lt; 5</code> reads like the maths and evaluates <code>age</code> once. Most languages cannot do this.</p>
+      <div class="note">
+        <p><b>Short-circuiting:</b> <code>and</code> stops at the first false value, <code>or</code> at the first true one. That is what makes this safe:</p>
+        <div style="font-family:var(--mono);font-size:1.3cqw">if items and items[0] == "a":</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: conditionals">
+  <div class="badge">Exercises, 10 min</div>
+  <h2>Conditionals</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li>Convert a temperature in both directions: read a unit (<code>C</code> or <code>F</code>) and a value. Reject anything else with a clear message.</li>
+      <li>Read an integer and report whether it divides by 2, by 3, by both, or by neither – in exactly one sentence per case.</li>
+      <li>Read three numbers and print the largest, without <code>max()</code> and without sorting.</li>
+      <li>FizzBuzz for a single number: <code>Fizz</code> if it divides by 3, <code>Buzz</code> if by 5, <code>FizzBuzz</code> if by both, else the number.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">02_conditionals.py</span>
+      <pre data-lang="python">
+unit = input("C or F: ").strip().upper()
+
+if unit == "C":
+    ...
+elif unit == "F":
+    ...
+else:
+    print("Unknown unit")
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Loops">
+  <h2>Python has no counting <code>for</code> loop</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">every for loop is a for-each loop</span>
+      <pre data-lang="python">
+for n in [1, 2, 3, 5]:
+    print(n)
+
+for char in "abc":
+    print(char)
+
+for key in {"a": 1, "b": 2}:
+    print(key)          # a, b
+
+for line in open("data.txt"):
+    print(line.strip())
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">when you really do want counting</span>
+      <pre data-lang="python">
+range(5)          # 0 1 2 3 4
+range(2, 6)       # 2 3 4 5
+range(0, 10, 3)   # 0 3 6 9
+range(5, 0, -1)   # 5 4 3 2 1
+
+for i in range(3):
+    print(i)
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.4cqw"><code>range</code> stops <b>before</b> the second number. <code>range(5)</code> has five values and never yields 5.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Loops">
+  <h2><code>while</code>: repeat until something changes</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+j = 0
+while j &lt; 3:
+    print(j)
+    j += 1          # j = j + 1
+
+# the deliberate infinite loop
+while True:
+    letter = input("Press Q to exit: ")
+    if letter == "Q":
+        break
+</pre>
+    </div>
+    <div>
+      <p>Use <code>for</code> when you know what you are iterating over. Use <code>while</code> when you do not know how many rounds it takes.</p>
+      <div class="trap">
+        <p><b>Forget <code>j += 1</code> and the loop never ends.</b> <kbd>Ctrl</kbd>+<kbd>C</kbd> stops a runaway script; in a notebook, press the stop button.</p>
+      </div>
+      <p class="dim">Every <code>while</code> needs an answer to: what makes this condition eventually false?</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Loops">
+  <h2><code>break</code>, <code>continue</code>, and the <code>else</code> nobody knows</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+for i in range(10):
+    if i == 3:
+        break        # leave the loop now
+    print(i)         # 0 1 2
+
+for i in range(6):
+    if i % 2 == 0:
+        continue     # skip to next round
+    print(i)         # 1 3 5
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">for ... else runs only if no break</span>
+      <pre data-lang="python">
+target = 7
+for n in [1, 4, 9]:
+    if n == target:
+        print("found it")
+        break
+else:
+    print("not in the list")
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.4cqw">Handy for searches: no flag variable needed.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: loops">
+  <div class="badge">Exercises, 10 min</div>
+  <h2>Loops</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li>Read a number of rows and print a growing-then-shrinking pyramid of <code>*</code>.</li>
+      <li>Print the Fibonacci numbers below 50. Then print the first 10 of them.</li>
+      <li>The computer picks a number from 1 to 10 (<code>random.randint</code>); the user guesses until they get it.</li>
+      <li>Improve it: say <b>Higher</b> or <b>Lower</b> after each guess, and report how many guesses it took.</li>
+      <li><b>Bonus.</b> Swap sides – the user thinks of a number from 1 to 100 and the computer guesses, using <b>higher</b> / <b>lower</b> answers. Do it in at most 7 guesses.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">03_loops.py – target output for 1</span>
+      <pre data-lang="text">
+*
+**
+***
+**
+*
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Functions">
+  <div class="marker">Section 3</div>
+  <h1>Functions</h1>
+</section>
+
+<section class="slide" data-title="Functions">
+  <h2>Give a behaviour a name and stop repeating yourself</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+def greet():
+    print("hello world")
+
+greet()
+
+def add(a, b):
+    return a + b
+
+total = add(9, 4)
+print(total)             # 13
+
+def nothing():
+    print("no return here")
+
+print(nothing())         # None
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><code>def</code>, a name, parentheses, a colon, an indented body.</li>
+        <li><code>return</code> hands a value back <b>and</b> ends the function.</li>
+        <li>A function without <code>return</code> returns <code>None</code> – a real value, and the most common beginner bug.</li>
+      </ul>
+      <div class="note"><p>Prefer <code>return</code> over <code>print</code> inside a function. A printed value cannot be tested, reused, or summed.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Functions">
+  <h2>Arguments: positional, keyword, default</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+def add(num_1, num_2=8):
+    return num_1 + num_2
+
+add(4, 5)          # 9  positional
+add(4)             # 12 default fills in
+add(4, num_2=5)    # 9  keyword
+add(num_2=5, num_1=4)   # order free
+
+add()
+# TypeError: add() missing 1 required
+# positional argument: 'num_1'
+</pre>
+    </div>
+    <div>
+      <p>Defaults must come after non-defaults in the signature.</p>
+      <div class="note">
+        <p>Keyword arguments at the call site are free documentation. Compare:</p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.5cqw">
+        connect("db1", 5, True, False)<br><br>
+        connect("db1", retries=5,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ssl=True, verbose=False)
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Functions">
+  <h2>The mutable default trap</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+def add_item(item, basket=[]):
+    basket.append(item)
+    return basket
+
+print(add_item("apple"))
+print(add_item("pear"))
+</pre>
+      <div class="out" style="margin-top:1cqw">['apple']
+['apple', 'pear']</div>
+    </div>
+    <div>
+      <div class="trap">
+        <p><b>The default is created once</b>, when the <code>def</code> line runs – not on every call. Every call shares the same list.</p>
+      </div>
+      <div class="plate sm" style="margin-top:1.4cqw">
+        <span class="cap">the fix</span>
+        <pre data-lang="python">
+def add_item(item, basket=None):
+    if basket is None:
+        basket = []
+    basket.append(item)
+    return basket
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Functions">
+  <h2>Docstrings and type hints</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="python">
+def area(radius: float) -&gt; float:
+    """Area of a circle with the given radius.
+
+    Raises ValueError for a negative radius.
+    """
+    if radius &lt; 0:
+        raise ValueError("radius must be &gt;= 0")
+    return pi * radius ** 2
+
+print(area.__doc__)
+help(area)
+</pre>
+    </div>
+    <div>
+      <p>The docstring is the first thing in the body, in triple quotes. Your editor, <code>help()</code> and every documentation tool read it.</p>
+      <p>Type hints are <b>not enforced at runtime</b> – Python will happily pass a string. They exist for the reader, the editor's autocomplete, and <code>mypy</code>.</p>
+      <div class="note"><p>Write the docstring first. If you cannot describe the function in one line, it is doing two things.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Functions">
+  <h2><code>*args</code> and <code>**kwargs</code>: any number of arguments</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+def report(*args, **kwargs):
+    for a in args:
+        print(f"positional: {a}")
+    for key, value in kwargs.items():
+        print(f"{key} = {value}")
+
+report(1, 2, name="nico", age=24)
+</pre>
+      <div class="out" style="margin-top:1cqw">positional: 1
+positional: 2
+name = nico
+age = 24</div>
+    </div>
+    <div>
+      <p><code>args</code> arrives as a <b>tuple</b>, <code>kwargs</code> as a <b>dict</b>. The names are convention, the <code>*</code> and <code>**</code> are the syntax.</p>
+      <div class="plate sm" style="margin-top:1.2cqw">
+        <span class="cap">and it works in reverse</span>
+        <pre data-lang="python">
+values = [4, 5, 6]
+options = {"name": "alex", "age": 25}
+report(*values, **options)
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Functions">
+  <h2>Scope: what a function can see</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+counter = 0            # module level
+
+def bump():
+    counter = counter + 1
+bump()
+# UnboundLocalError: local variable
+# 'counter' referenced before assignment
+
+def bump_ok(counter):
+    return counter + 1
+counter = bump_ok(counter)   # 1
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>A function can <b>read</b> names from the enclosing module, but assigning to a name makes it local for the whole function.</li>
+        <li><code>global</code> makes the error go away and makes the bug permanent. Take arguments, return values.</li>
+        <li>A function whose result depends only on its arguments can be tested, cached and reasoned about. One that reads global state cannot.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Signatures">
+  <h2>A signature is an interface. Design it.</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+export(rows, True, True, False)   # ???
+
+# * makes everything after it keyword-only
+def export(rows, *, header=True,
+           gzip=False, overwrite=False):
+    ...
+
+export(rows, header=True, gzip=True)
+
+# five parameters that always travel
+# together are one missing object
+def connect(host, port, user, password,
+            database, timeout): ...
+
+def connect(config: DbConfig): ...
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><b>Booleans are keyword-only.</b> A bare <code>True</code> tells the reader nothing, and swapping two of them still runs.</li>
+        <li>More than about four parameters means some of them belong together in one frozen dataclass.</li>
+        <li>Return a named thing, not a tuple of five: <code>result.total</code> survives a reordering, <code>result[3]</code> does not.</li>
+      </ul>
+      <div class="note"><p>The test: can a reviewer understand the call without opening the definition?</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Pure functions">
+  <h2>Push the I/O to the edges</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">reads the disk, the clock and the network</span>
+        <pre data-lang="python">
+def report():
+    rows = list(csv.DictReader(open("sales.csv")))
+    rate = requests.get(RATE_URL).json()["USD"]
+    today = date.today()
+    return sum(r.amount * rate for r in rows
+               if r.day == today)
+</pre>
+      </div>
+      <div class="plate sm" style="margin-top:1.3cqw">
+        <span class="cap">the same work, split</span>
+        <pre data-lang="python">
+def summarise(rows, rate, today):    # pure
+    return sum(r.amount * rate for r in rows
+               if r.day == today)
+
+def main():                          # the shell
+    rows = read_csv(Path("sales.csv"))
+    print(summarise(rows, fetch_rate(),
+                    date.today()))
+</pre>
+      </div>
+    </div>
+    <div>
+      <p><b>A pure function</b> returns the same answer for the same arguments and changes nothing outside itself.</p>
+      <ul class="bare">
+        <li>It can be tested with a literal, cached, retried, and read without opening another file.</li>
+        <li>Hidden inputs – the clock, <code>os.environ</code>, a global, a network call – are what make a test flaky and a bug unreproducible. Pass them in.</li>
+        <li>Aim for a <b>functional core</b> of pure logic inside a thin <b>imperative shell</b> that reads and writes.</li>
+      </ul>
+      <div class="note"><p>The first version needs a file, a network and the right date. The second needs three literals.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Type hints">
+  <h2>Type hints that earn their keep</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+from collections.abc import Iterable, Sequence
+from decimal import Decimal
+
+def mean(values: Sequence[float]) -&gt; float: ...
+
+def totals(rows: Iterable[Sale]
+           ) -&gt; dict[str, Decimal]: ...
+
+def find(order_id: str) -&gt; Sale | None: ...
+
+Rate = Decimal          # an alias names an idea
+def convert(amount: Decimal,
+            rate: Rate) -&gt; Decimal: ...
+</pre>
+      <pre data-lang="console" style="margin-top:0.9cqw">
+$ mypy src/
+src/report.py:41: error: Item "None" of
+"Sale | None" has no attribute "amount"
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><b>Accept the widest type, return the narrowest.</b> Take an <code>Iterable</code>, hand back a <code>list</code>. Then a caller can pass a generator, a tuple or a list without converting.</li>
+        <li><code>Sale | None</code> is a promise the caller must handle, and <code>mypy</code> makes it a real one. That is the moment hints stop being decoration.</li>
+        <li>Nothing is checked at runtime. If you need that at a boundary, use <code>pydantic</code>.</li>
+      </ul>
+      <div class="note"><p>You do not have to annotate everything. Start with the functions other people call, and with anything returning <code>None</code> sometimes.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: functions">
+  <div class="badge">Exercises, 10 min</div>
+  <h2>Functions</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li><code>exponent(a, b)</code> returning a<sup>b</sup>. Then again without <code>**</code>.</li>
+      <li><code>fibonacci(n)</code> returning a list of the first <code>n</code> Fibonacci numbers.</li>
+      <li><code>is_palindrome(text)</code>, ignoring case, spaces and punctuation. <code>"A man, a plan, a canal: Panama"</code> is one.</li>
+      <li><code>word_lengths(sentence)</code> returning a dict of word to length.</li>
+      <li><b>Bonus.</b> Write <code>fibonacci</code> recursively and time both for <code>n = 30</code>. Why is one so slow?</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">04_functions.py – self-checking</span>
+      <pre data-lang="python">
+def exponent(a, b):
+    ...
+
+assert exponent(3, 2) == 9
+assert exponent(2, 10) == 1024
+assert exponent(5, 0) == 1
+print("exponent ok")
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Data structures">
+  <div class="marker">Section 4</div>
+  <h1>Data structures</h1>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Lists: an ordered pile you can change</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+nums = [1, 2, 3, 4, 5, 6]
+
+nums[0]      # 1   first
+nums[-1]     # 6   last
+nums[-2]     # 5   second to last
+nums[9]      # IndexError: list index
+             #            out of range
+
+len(nums)    # 6
+max(nums)    # 6
+min(nums)    # 1
+sum(nums)    # 21
+3 in nums    # True
+nums.index(3)   # 2
+</pre>
+    </div>
+    <div>
+      <p>Indexes start at <b>0</b>. The last item is at <code>len(nums) - 1</code>, or just <code>-1</code>.</p>
+      <div class="note">
+        <p>Negative indexes count from the right. <code>nums[-1]</code> is how Python spells "the last one" – you will never write <code>nums[len(nums) - 1]</code> again.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Slicing: <code>[start:stop:step]</code></h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="python">
+nums = [1, 2, 3, 4, 5, 6]
+
+nums[1:3]     # [2, 3]      stop is excluded
+nums[:3]      # [1, 2, 3]   from the start
+nums[3:]      # [4, 5, 6]   to the end
+nums[0:5:2]   # [1, 3, 5]   every second
+nums[::-1]    # [6, 5, 4, 3, 2, 1]  reversed
+nums[:]       # a shallow copy
+
+nums[10:20]   # []  slices never raise
+</pre>
+    </div>
+    <div>
+      <p>Read <code>[1:3]</code> as "from index 1, up to but not including 3". Same rule as <code>range</code>.</p>
+      <p>Slicing works on anything ordered – lists, tuples, strings:</p>
+      <div style="font-family:var(--mono);font-size:1.4cqw">"hello"[1:4]   # 'ell'</div>
+      <div class="note"><p>A slice returns a <b>new</b> list. An index returns the item itself.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Changing a list</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+items = [1, 2, 3]
+
+items.append(4)        # [1, 2, 3, 4]
+items.extend([5, 6])   # [1, 2, 3, 4, 5, 6]
+items.insert(0, "a")   # ['a', 1, 2, 3 ...]
+items[1] = 10          # replace in place
+items[1:3] = [20, 30]  # replace a slice
+
+last = items.pop()     # take from the end
+first = items.pop(0)   # take from the front
+items.remove(30)       # first match by value
+del items[0]           # by index
+items.clear()
+</pre>
+    </div>
+    <div>
+      <div class="trap">
+        <p><b><code>append</code> vs <code>extend</code>.</b></p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.5cqw">
+[1].append([2, 3])  → [1, [2, 3]]<br>
+[1].extend([2, 3])  → [1, 2, 3]
+        </div>
+      </div>
+      <div class="note" style="margin-top:1.3cqw">
+        <p>These methods change the list and return <code>None</code>. So <code>items = items.append(4)</code> throws your list away.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2><code>sort()</code> changes the list, <code>sorted()</code> makes a new one</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+nums = [9, 8, 3, 6, 1]
+
+nums.sort()              # nums is now sorted
+nums.sort(reverse=True)  # returns None!
+
+nums = [9, 8, 3, 6, 1]
+ranked = sorted(nums)    # nums untouched
+
+words = ["Jean", "andré", "Paul"]
+sorted(words)            # capitals first
+sorted(words, key=str.lower)   # sensible
+
+people = [{"n": "a", "age": 30},
+          {"n": "b", "age": 24}]
+sorted(people, key=lambda p: p["age"])
+</pre>
+    </div>
+    <div>
+      <p>Use <code>sorted()</code> unless you have a reason to mutate. <code>key=</code> takes a function that turns each item into the thing you want to sort by.</p>
+      <div class="trap">
+        <p><b>Mixed types cannot be ordered.</b></p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.4cqw">
+["Jean", 3, "Paul", 1].sort()<br>
+<span class="dim"># TypeError: '&lt;' not supported</span><br>
+<span class="dim"># between instances of</span><br>
+<span class="dim"># 'int' and 'str'</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>The one that catches everyone: names are not boxes</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+original = [9, 4, 6]
+alias = original          # same list!
+alias.append(99)
+
+print(original)
+print(alias)
+</pre>
+      <div class="out" style="margin-top:1cqw">[9, 4, 6, 99]
+[9, 4, 6, 99]</div>
+    </div>
+    <div class="plate sm">
+      <span class="cap">to keep the original, copy it</span>
+      <pre data-lang="python">
+original = [9, 4, 6]
+
+copy_1 = original.copy()
+copy_2 = original[:]
+copy_3 = list(original)
+
+copy_1.append(99)
+print(original)     # [9, 4, 6]
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.35cqw">Nested lists need <code>copy.deepcopy()</code> – a shallow copy still shares the inner lists.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Mutable and immutable, in one table</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th>Immutable – a new object every time</th><th>Mutable – changed in place</th></tr>
+      <tr><td><code>int</code>, <code>float</code>, <code>bool</code>, <code>str</code>, <code>tuple</code>, <code>frozenset</code></td><td><code>list</code>, <code>dict</code>, <code>set</code>, most of your own classes</td></tr>
+      <tr><td>Safe to pass around and share</td><td>Passing one to a function lets that function change yours</td></tr>
+      <tr><td>Can be a dict key or a set member</td><td>Cannot – <code>TypeError: unhashable type</code></td></tr>
+    </table>
+    <div class="cols" style="margin-top:1.6cqw">
+      <div class="plate sm">
+        <pre data-lang="python">
+def shout(words):
+    words.append("!")     # caller's list
+    return words
+
+mine = ["hey"]
+shout(mine)
+print(mine)      # ['hey', '!']
+</pre>
+      </div>
+      <div class="plate sm">
+        <span class="cap">say what you mean</span>
+        <pre data-lang="python">
+def shout(words):
+    return words + ["!"]  # new list
+
+mine = ["hey"]
+loud = shout(mine)
+print(mine)      # ['hey']
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Tuples: a list that has been sealed</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+empty = ()
+pair = (1, 2)
+point = (1, 2, 5)
+
+point[0] = 9
+# TypeError: 'tuple' object does not
+# support item assignment
+</pre>
+      <div class="trap" style="margin-top:1.2cqw">
+        <p><b>The comma makes the tuple, not the brackets.</b></p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.4cqw">
+x = (1)    <span class="dim"># int 1</span><br>
+x = (1,)   <span class="dim"># tuple (1,)</span><br>
+x = 1,     <span class="dim"># tuple (1,) too</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p>You rarely build tuples by hand. You meet them constantly, because Python uses them wherever a group of values should not change:</p>
+      <ul class="bare">
+        <li>Returning more than one value from a function.</li>
+        <li>Dict keys, set members, <code>.items()</code> pairs.</li>
+        <li>A fixed record – a coordinate, an RGB colour, a database row.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Unpacking: take a sequence apart in one line</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+a, b = 3, 4
+a, b = b, a          # swap, no temp var
+
+def divide(n, by):
+    return n // by, n % by
+
+whole, rest = divide(17, 5)   # 3, 2
+
+first, *middle, last = [1, 2, 3, 4, 5]
+# first=1  middle=[2, 3, 4]  last=5
+
+for i, name in enumerate(["a", "b"]):
+    print(i, name)        # 0 a / 1 b
+</pre>
+    </div>
+    <div>
+      <p>The left side describes the shape of the right side. If the shapes disagree you get a <code>ValueError</code> immediately, which is a feature.</p>
+      <div class="note">
+        <p>Use <code>_</code> for a value you must accept but do not want:</p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.4cqw">_, extension = "report.csv".split(".")</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Dictionaries: look things up by name</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+person = {"name": "Charlotte", "age": 30}
+
+person["name"]            # 'Charlotte'
+person["job"]             # KeyError: 'job'
+person.get("job")         # None
+person.get("job", "n/a")  # 'n/a'
+
+person["job"] = "Engineer"   # add
+person["age"] = 31           # update
+del person["age"]            # remove
+person.pop("job")            # remove + return
+
+"name" in person          # True
+len(person)               # 1
+</pre>
+    </div>
+    <div>
+      <p>Keys must be immutable – strings, numbers, tuples. Values can be anything, including other dicts.</p>
+      <div class="note">
+        <p><code>person["job"]</code> raises when the key is missing; <code>person.get("job")</code> returns <code>None</code>. Use the first when a missing key is a bug, the second when it is expected.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Walking through a dictionary</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+scores = {"a": 30, "b": 15, "c": 3}
+
+for key in scores:
+    print(key)                  # a b c
+
+for value in scores.values():
+    print(value)                # 30 15 3
+
+for key, value in scores.items():
+    print(f"{key} -&gt; {value}")
+
+sum(scores.values())            # 48
+max(scores, key=scores.get)     # 'a'
+sorted(scores.items(),
+       key=lambda kv: -kv[1])
+</pre>
+    </div>
+    <div>
+      <p>Iterating a dict gives you the <b>keys</b>. Ask for <code>.values()</code> or <code>.items()</code> when you want more.</p>
+      <div class="plate sm" style="margin-top:1.2cqw">
+        <span class="cap">merging</span>
+        <pre data-lang="python">
+d1 = {"a": 1, "b": 2}
+d2 = {"b": 9, "c": 3}
+
+{**d1, **d2}     # {'a':1,'b':9,'c':3}
+d1 | d2          # same, Python 3.9+
+d1.update(d2)    # changes d1 in place
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Counting things – the pattern you will write most</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">by hand</span>
+      <pre data-lang="python">
+def letter_counts(text):
+    counts = {}
+    for char in text:
+        if char in counts:
+            counts[char] += 1
+        else:
+            counts[char] = 1
+    return counts
+
+letter_counts("banana")
+# {'b': 1, 'a': 3, 'n': 2}
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">the two shortcuts</span>
+      <pre data-lang="python">
+counts = {}
+for char in "banana":
+    counts[char] = counts.get(char, 0) + 1
+
+from collections import Counter
+Counter("banana")
+# Counter({'a': 3, 'n': 2, 'b': 1})
+
+Counter("banana").most_common(2)
+# [('a', 3), ('n', 2)]
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>Write it by hand once so you understand it, then use <code>Counter</code> forever.</p></div>
+</section>
+
+<section class="slide" data-title="Data structures">
+  <h2>Sets: membership and deduplication</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+seen = {1, 2, 3, 4, 4, 4}
+print(seen)          # {1, 2, 3, 4}
+
+list(set([3, 1, 3, 2]))   # dedupe
+
+a = {1, 2, 3}
+b = {3, 4}
+
+a | b     # {1, 2, 3, 4}  union
+a &amp; b     # {3}           intersection
+a - b     # {1, 2}        difference
+a ^ b     # {1, 2, 4}     either, not both
+
+seen.add(5)
+seen.discard(99)     # no error if absent
+</pre>
+    </div>
+    <div>
+      <p>Sets have no order and no duplicates. Membership tests are effectively instant no matter the size – which is the real reason to use them.</p>
+      <div class="note">
+        <p><code>x in big_list</code> checks every element.<br><code>x in big_set</code> checks one hash.</p>
+        <p>On a million items that is the difference between a coffee break and no wait at all.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="What it costs">
+  <h2>Every container has a price list</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th>Operation</th><th><code>list</code></th><th><code>dict</code> / <code>set</code></th><th><code>deque</code></th><th>Why</th></tr>
+      <tr><td><code>x in c</code></td><td>O(n)</td><td><b>O(1)</b></td><td>O(n)</td><td>a hash lands on the right bucket immediately</td></tr>
+      <tr><td>append / add</td><td>O(1)</td><td>O(1)</td><td>O(1) both ends</td><td>lists grow at the end only</td></tr>
+      <tr><td><code>insert(0, x)</code>, <code>pop(0)</code></td><td><b>O(n)</b></td><td>–</td><td>O(1)</td><td>every other element shifts one place</td></tr>
+      <tr><td>by position / by key</td><td>O(1)</td><td>O(1) by key</td><td>O(n)</td><td></td></tr>
+    </table>
+    <div class="cols" style="margin-top:1.4cqw">
+      <div class="plate sm">
+        <span class="cap">the accidental O(n²) – 10k x 10k = 100M checks</span>
+        <pre data-lang="python">
+known_ids = [row["id"] for row in reference]   # a list
+
+for row in incoming:
+    if row["id"] in known_ids:      # scans all 10k
+        ...
+</pre>
+      </div>
+      <div class="plate sm">
+        <span class="cap">one word, three orders of magnitude</span>
+        <pre data-lang="python">
+known_ids = {row["id"] for row in reference}   # a set
+
+for row in incoming:
+    if row["id"] in known_ids:      # one hash
+        ...
+</pre>
+      </div>
+    </div>
+    <div class="note"><p>The same shape hides in <code>result = result + [x]</code> and <code>text += line</code> in a loop: both copy everything, every round.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Which record type">
+  <h2>Five ways to hold one row, and when each is right</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th>Shape</th><th>Reach for it when</th><th>Costs</th></tr>
+      <tr><td><code>tuple</code></td><td>two or three values, right here, going straight into an unpack</td><td><code>row[2]</code> means nothing to a reader</td></tr>
+      <tr><td><code>dict</code></td><td>the keys are data – parsed JSON, a CSV row you have not validated yet</td><td>typos are <code>KeyError</code>s at runtime; no autocomplete</td></tr>
+      <tr><td><code>NamedTuple</code></td><td>an immutable record you also want to unpack or index</td><td>still a tuple, so it compares equal to one</td></tr>
+      <tr><td><b><code>@dataclass</code></b></td><td><b>the default.</b> A record with a name, types, methods, defaults</td><td>nothing worth mentioning</td></tr>
+      <tr><td><code>pydantic.BaseModel</code></td><td>the data crosses a boundary and must be <em>validated</em>, not just typed</td><td>a dependency, and slower per row</td></tr>
+    </table>
+    <div class="cols" style="margin-top:1.4cqw">
+      <div class="plate sm">
+        <pre data-lang="python">
+row = {"id": "A-1", "amount": "19.99"}
+total += float(row["ammount"])   # KeyError at 02:00
+</pre>
+      </div>
+      <div class="plate sm">
+        <pre data-lang="python">
+@dataclass(frozen=True, slots=True)
+class Sale:
+    order_id: str
+    amount: Decimal
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Grouping">
+  <h2>Grouping and joining, without a dataframe</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+from collections import defaultdict
+
+by_country = defaultdict(list)
+for sale in sales:
+    by_country[sale.country].append(sale)
+
+totals = {country: sum(s.amount for s in group)
+          for country, group in by_country.items()}
+
+# a join is a dict and a lookup
+names = {c.id: c.name for c in customers}
+for sale in sales:
+    print(names.get(sale.customer_id, "unknown"),
+          sale.amount)
+</pre>
+    </div>
+    <div>
+      <p><code>defaultdict(list)</code> creates the empty list the first time you touch a key. It replaces the <code>if key not in d</code> dance you would otherwise write in every aggregation.</p>
+      <div class="trap">
+        <p><b><code>itertools.groupby</code> groups <em>consecutive</em> items only.</b> Unsorted input gives you the same key back several times.</p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.4cqw">
+rows.sort(key=by_country)<br>
+groupby(rows, key=by_country)
+        </div>
+      </div>
+      <p class="dim" style="margin-top:1.2cqw">Reach for <code>pandas</code> or <code>polars</code> when the data is a table and the operations are table-shaped. For a hundred thousand records and one grouping, a dict is faster to write, faster to run and easier to test.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: data structures">
+  <div class="badge">Exercises, 10 min</div>
+  <h2>Data structures</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li>Find the largest number in a list without <code>max()</code> and without sorting.</li>
+      <li>Read a width and a height, build a 2-dimensional list filled with <code>*</code>, then print it as a rectangle.</li>
+      <li>Count how often each letter appears in a string, using a dict.</li>
+      <li>Merge two dicts, summing the values of shared keys. Return the result as a list of <code>[key, value]</code> pairs.</li>
+      <li>Sort a list with bubble sort. Use a <code>swap</code> helper, and leave the caller's list untouched.</li>
+      <li><b>Bonus.</b> Given a list of <code>{"name":…, "team":…}</code> dicts, return a dict of team → list of names.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">05_structures.py</span>
+      <pre data-lang="python">
+def merge_sum(d1, d2):
+    ...
+
+assert merge_sum(
+    {"a": 30, "b": 15},
+    {"b": 10, "c": 11},
+) == [["a", 30], ["b", 25], ["c", 11]]
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Syntactic sugar">
+  <div class="marker">Section 5</div>
+  <h1>Syntactic sugar</h1>
+</section>
+
+<section class="slide" data-title="Syntactic sugar">
+  <h2>Comprehensions: build a list from a list</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">the loop you already know</span>
+      <pre data-lang="python">
+squares = []
+for x in [1, 2, 3, 4]:
+    squares.append(x * x)
+
+evens = []
+for x in [1, 2, 3, 4]:
+    if x % 2 == 0:
+        evens.append(x)
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">the same thing, said once</span>
+      <pre data-lang="python">
+squares = [x * x for x in [1, 2, 3, 4]]
+
+evens = [x for x in [1, 2, 3, 4]
+         if x % 2 == 0]
+
+upper = [w.upper() for w in ["a", "b"]]
+
+# dict and set comprehensions too
+lengths = {w: len(w) for w in ["ab", "c"]}
+unique = {w[0] for w in ["ab", "ac"]}
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>Read it right to left: <b>for</b> each x, <b>if</b> it passes, put <b>this</b> in the list. One <code>for</code> and at most one <code>if</code> – past that, write the loop.</p></div>
+</section>
+
+<section class="slide" data-title="Syntactic sugar">
+  <h2><code>lambda</code>, <code>map</code>, <code>filter</code> – and when not to</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+# a lambda is a function with no name
+double = lambda x: x * 2
+double(5)          # 10
+
+# same as
+def double(x):
+    return x * 2
+
+nums = [1, 2, 3, 4]
+list(map(lambda x: x * x, nums))
+list(filter(lambda x: x % 2 == 0, nums))
+</pre>
+    </div>
+    <div>
+      <p><code>map</code> applies a function to every item. <code>filter</code> keeps the items where it returns true. Both give you a lazy iterator, so <code>list()</code> is needed to see anything.</p>
+      <div class="note">
+        <p>In Python, the comprehension is the idiomatic form:</p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.4cqw">
+[x * x for x in nums]<br>
+[x for x in nums if x % 2 == 0]
+        </div>
+        <p style="margin-top:0.7cqw">Keep <code>lambda</code> for the <code>key=</code> argument of <code>sorted</code>, <code>min</code> and <code>max</code>. That is where it earns its place.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Syntactic sugar">
+  <h2>Six small things that clean up real code</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+# 1 index and value together
+for i, name in enumerate(names, start=1):
+    print(f"{i}. {name}")
+
+# 2 walk two lists side by side
+for name, score in zip(names, scores):
+    print(name, score)
+
+# 3 join instead of += in a loop
+", ".join(names)
+</pre>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="python">
+# 4 any / all read like English
+if any(s &lt; 0 for s in scores): ...
+if all(s &lt; 100 for s in scores): ...
+
+# 5 unpack into calls and literals
+both = [*list_a, *list_b]
+merged = {**map_a, **map_b}
+
+# 6 assign inside a condition (3.8+)
+if (found := lookup(key)) is not None:
+    print(found)
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Syntactic sugar">
+  <h2>Spot the sugar</h2>
+  <div class="body cols">
+    <div class="plate">
+      <span class="cap">rewrite this in three lines</span>
+      <pre data-lang="python">
+names = ["ada", "grace", "alan", "edsger"]
+
+result = []
+i = 0
+while i &lt; len(names):
+    if len(names[i]) &gt; 3:
+        result.append(
+            str(i) + ": " + names[i].upper()
+        )
+    i = i + 1
+
+output = ""
+for r in result:
+    output = output + r + ", "
+print(output[:-2])
+</pre>
+    </div>
+    <div>
+      <p class="lead">Two minutes, in pairs. Then we compare.</p>
+      <p>Rules: same output, no <code>while</code>, no manual index, no string <code>+=</code>.</p>
+      <div class="out" style="margin-top:1.4cqw"><span class="cap">expected output</span>1: GRACE, 2: ALAN, 3: EDSGER</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Lazy or eager">
+  <h2>Brackets build, parentheses stream</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+sum([s.amount for s in rows])   # a 10M list first
+sum(s.amount for s in rows)     # constant memory
+
+lines  = (l.strip() for l in open("app.log"))
+errors = (l for l in lines if "ERROR" in l)
+first  = list(islice(errors, 10))
+# nothing was read until this line, and
+# the file is closed after ten matches
+</pre>
+      <div class="out" style="margin-top:1cqw"><span class="cap">1M rows</span>list comprehension   78 MB
+generator expression  200 bytes</div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>A generator expression is a comprehension that has not run yet. Same syntax, round brackets, and no list in memory.</li>
+        <li>Inside a single-argument call the brackets are optional: <code>sum(...)</code>, <code>any(...)</code>, <code>max(...)</code>, <code>"".join(...)</code>.</li>
+        <li><b>You can only walk it once.</b> If two loops need the data, or you need <code>len()</code>, build the list – deliberately.</li>
+      </ul>
+      <div class="note"><p>Readability limit: one <code>for</code>, at most one <code>if</code>, no nested conditional expression. A comprehension you have to read twice is worse than the loop it replaced.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Classes">
+  <div class="marker">Section 6</div>
+  <h1>Classes</h1>
+</section>
+
+<section class="slide" data-title="Classes">
+  <h2>You have been using objects all morning</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="python">
+"hello".upper()      # a str object
+[1, 2].append(3)     # a list object
+{}.keys()            # a dict object
+
+# a class bundles data with the
+# behaviour that belongs to it
+class Square:
+    pass
+
+sq = Square()
+print(type(sq))
+# &lt;class '__main__.Square'&gt;
+</pre>
+    </div>
+    <div>
+      <p>A class is a template. An instance is one thing made from it.</p>
+      <p>Write a class when you notice yourself passing the same three variables into every function – those variables want to live together.</p>
+      <div class="note"><p>Not every problem needs one. A function that transforms data should stay a function.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Classes">
+  <h2><code>__init__</code> and <code>self</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class Person:
+    """Someone with a name and an age."""
+
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def describe(self):
+        return f"{self.name}, {self.age}"
+
+p = Person("nico", 24)
+print(p.name)          # nico
+print(p.describe())    # nico, 24
+p.age = 25             # attributes are open
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><code>__init__</code> runs automatically when you call <code>Person(...)</code>. It sets the instance up; it does not return anything.</li>
+        <li><code>self</code> is the instance being worked on. It is the first parameter of every method, and Python passes it for you.</li>
+        <li><code>self.name = name</code> stores the value on this instance. Without <code>self.</code> it is a local variable that vanishes.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Classes">
+  <h2>Inheritance: a Student is a Person</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class Student(Person):
+    def __init__(self, name, age, grade):
+        super().__init__(name, age)
+        self.grade = grade
+
+    def describe(self):
+        base = super().describe()
+        return f"{base}, grade {self.grade}"
+
+s = Student("alex", 26, "A+")
+print(s.describe())
+print(isinstance(s, Person))   # True
+</pre>
+    </div>
+    <div>
+      <p><code>super().__init__(...)</code> runs the parent's setup so you do not repeat it. Forget it and <code>self.name</code> will not exist.</p>
+      <p>Overriding a method replaces it; calling <code>super()</code> inside the override extends it instead.</p>
+      <div class="note"><p>Python allows multiple inheritance (<code>class C(A, B)</code>). It is rarely the right answer. Prefer holding an object over inheriting from it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Classes">
+  <h2>Dunder methods: teaching your class the operators</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class Point:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+    def __add__(self, other):
+        return Point(self.x + other.x,
+                     self.y + other.y)
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y})"
+
+    def __eq__(self, other):
+        return (self.x, self.y) == (other.x,
+                                    other.y)
+
+print(Point(1, 2) + Point(5, 3))
+</pre>
+    </div>
+    <div>
+      <div class="out"><span class="cap">output</span>Point(6, 5)</div>
+      <table class="xs" style="margin-top:1.4cqw">
+        <tr><th>You write</th><th>Python calls</th></tr>
+        <tr><td><code>a + b</code></td><td><code>a.__add__(b)</code></td></tr>
+        <tr><td><code>a == b</code></td><td><code>a.__eq__(b)</code></td></tr>
+        <tr><td><code>len(a)</code></td><td><code>a.__len__()</code></td></tr>
+        <tr><td><code>a[k]</code></td><td><code>a.__getitem__(k)</code></td></tr>
+        <tr><td><code>for x in a</code></td><td><code>a.__iter__()</code></td></tr>
+        <tr><td><code>with a:</code></td><td><code>a.__enter__()</code></td></tr>
+        <tr><td><code>print(a)</code></td><td><code>a.__str__()</code></td></tr>
+      </table>
+      <p class="dim" style="margin-top:0.8cqw">Always give a class a <code>__repr__</code>. Debugging without one is guesswork.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Classes">
+  <h2>When the class is only data: <code>@dataclass</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">by hand</span>
+      <pre data-lang="python">
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Point(x={self.x}, y={self.y})"
+
+    def __eq__(self, other):
+        return (self.x, self.y) == \
+               (other.x, other.y)
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">the same class</span>
+      <pre data-lang="python">
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+    label: str = "unnamed"
+
+p = Point(1, 2)
+print(p)        # Point(x=1, y=2, ...)
+print(p == Point(1, 2))    # True
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>You get <code>__init__</code>, <code>__repr__</code> and <code>__eq__</code> for free. Use <code>@dataclass(frozen=True)</code> when the record should not change after creation.</p></div>
+</section>
+
+<section class="slide" data-title="Properties">
+  <h2><code>@property</code>: an attribute with a brain</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class Account:
+    def __init__(self, cents: int):
+        self._cents = cents           # storage
+
+    @property
+    def balance(self) -&gt; Decimal:     # read
+        return Decimal(self._cents) / 100
+
+    @balance.setter
+    def balance(self, value: Decimal):
+        if value &lt; 0:
+            raise ValueError("no overdraft")
+        self._cents = int(value * 100)
+
+acc.balance                  # no parentheses
+acc.balance = Decimal("12.50")
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Python has no <code>private</code>. A leading underscore says "not part of the API" – between professionals that is enough.</li>
+        <li>So <b>do not write getters and setters up front.</b> Start with a plain attribute; the day it must be computed or validated, a property replaces it and <em>no caller changes</em>.</li>
+        <li>Keep properties cheap. If reading it hits the network, make it a method, so the cost is visible at the call site.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Constructors">
+  <h2>Alternative constructors, and the shared-state trap</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+@dataclass(frozen=True)
+class Sale:
+    order_id: str
+    amount: Decimal
+
+    @classmethod
+    def from_row(cls, raw: dict[str, str]) -&gt; "Sale":
+        return cls(raw["id"], Decimal(raw["amount"]))
+
+    @staticmethod
+    def is_valid_id(value: str) -&gt; bool:
+        return value.startswith("ORD-")
+
+Sale.from_row({"id": "ORD-1", "amount": "9.99"})
+</pre>
+    </div>
+    <div>
+      <p><code>__init__</code> takes the fields. A <code>@classmethod</code> takes each <em>other shape</em> the world hands you: <code>from_row</code>, <code>from_json</code>, <code>from_env</code>. It returns <code>cls(...)</code>, so subclasses get it for free.</p>
+      <div class="trap">
+        <p><b>A class attribute is shared by every instance.</b></p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.4cqw">
+class Basket:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;items = []&nbsp;&nbsp;<span class="dim"># one list, forever</span><br><br>
+a, b = Basket(), Basket()<br>
+a.items.append("apple")<br>
+b.items&nbsp;&nbsp;<span class="dim"># ['apple']</span>
+        </div>
+        <p style="margin-top:0.5cqw">Assign per-instance state in <code>__init__</code>, or use <code>field(default_factory=list)</code>. It is the mutable-default trap wearing a different hat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Composition">
+  <h2>Composition over inheritance</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">is a Report really an EmailSender?</span>
+      <pre data-lang="python">
+class Report(EmailSender, CsvWriter,
+             S3Uploader, Timestamped):
+    def run(self):
+        rows = self.load()
+        self.write_csv(rows)
+        self.upload()
+        self.send("done")
+</pre>
+      </div>
+      <div class="plate sm good" style="margin-top:1.3cqw">
+        <span class="cap">a Report has the things it needs</span>
+        <pre data-lang="python">
+class Report:
+    def __init__(self, writer, notifier):
+        self.writer = writer
+        self.notifier = notifier
+
+    def run(self, rows):
+        self.writer.write(rows)
+        self.notifier.send("done")
+</pre>
+      </div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Inherit only when the child is genuinely a <b>substitutable kind of</b> the parent – and then ask twice.</li>
+        <li>It is the tightest coupling the language offers: the child depends on the parent's <em>internals</em>, so every change to the base ripples outwards forever.</li>
+        <li>Holding an object gives the same reuse and lets you swap it in a test.</li>
+      </ul>
+      <div class="note"><p>Good uses: <code>Exception</code> subclasses, and framework hooks a library asks you to override. Not much else.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: classes">
+  <div class="badge">Take home</div>
+  <h2>Classes</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li><code>BankAccount</code> with an owner and a balance: <code>deposit</code>, <code>withdraw</code>, <code>__repr__</code>. Raise <code>ValueError</code> rather than go below zero.</li>
+      <li><code>SavingsAccount(BankAccount)</code> adding <code>add_interest(rate)</code>, reusing the parent's setup via <code>super()</code>.</li>
+      <li><code>Vector</code> with <code>__add__</code>, <code>__eq__</code>, <code>__repr__</code> and <code>__len__</code>.</li>
+      <li>Rewrite <code>Vector</code> as a frozen <code>@dataclass</code>. What did you delete?</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">06_classes.py</span>
+      <pre data-lang="python">
+acc = BankAccount("Charlotte", 100)
+acc.deposit(50)
+assert acc.balance == 150
+
+try:
+    acc.withdraw(1000)
+except ValueError:
+    print("refused")
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Design principles">
+  <div class="marker">Section 7</div>
+  <h1>Designing code that survives contact with a team</h1>
+</section>
+
+<section class="slide" data-title="Why principles">
+  <h2>Writing it is the cheap part</h2>
+  <div class="body cols wide-left">
+    <div>
+      <p class="lead">Code is read, changed, debugged and deleted far more often than it is written.</p>
+      <ul class="bare">
+        <li>The version you write today will be read by a colleague under pressure, at a moment when something is broken and nobody remembers why the function is like that.</li>
+        <li>Every principle below is a <b>trade</b>, not a law. Each buys you something and charges you something. Knowing the price is the skill; quoting the acronym is not.</li>
+        <li>Three questions carry most of the weight: <b>what changes together?</b> <b>what changes for different reasons?</b> <b>how would I test this?</b></li>
+      </ul>
+    </div>
+    <div>
+      <table class="xs">
+        <tr><th>Principle</th><th>Buys</th><th>Costs</th></tr>
+        <tr><td>KISS</td><td>anyone can read it</td><td>sometimes more lines</td></tr>
+        <tr><td>DRY</td><td>one place to fix</td><td>coupling, if you were wrong</td></tr>
+        <tr><td>YAGNI</td><td>less code to carry</td><td>a later refactor</td></tr>
+        <tr><td>SRP</td><td>small, testable pieces</td><td>more files</td></tr>
+        <tr><td>OCP</td><td>new cases don't touch old code</td><td>an indirection to follow</td></tr>
+        <tr><td>LSP</td><td>no surprises from subclasses</td><td>fewer clever hierarchies</td></tr>
+        <tr><td>ISP</td><td>tiny fakes in tests</td><td>more, smaller interfaces</td></tr>
+        <tr><td>DIP</td><td>testable core, swappable edges</td><td>wiring in one place</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="KISS">
+  <h2>KISS – the reader is you, at 02:00, with an incident open</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">clever</span>
+        <pre data-lang="python">
+def is_even(n): return not n &amp; 1
+
+out = [*map(lambda p: (p[0], p[1] * 1.21),
+            filter(lambda p: p[1] &gt; 0, items))]
+
+status = ("ok" if n &gt; 90 else "warn"
+          if n &gt; 50 else "fail")
+</pre>
+      </div>
+      <div class="plate sm good" style="margin-top:1.3cqw">
+        <span class="cap">clear</span>
+        <pre data-lang="python">
+def is_even(n: int) -&gt; bool:
+    return n % 2 == 0
+
+out = [(name, price * 1.21)
+       for name, price in items if price &gt; 0]
+
+if n &gt; 90:      status = "ok"
+elif n &gt; 50:    status = "warn"
+else:           status = "fail"
+</pre>
+      </div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><b>Simple is not the same as short.</b> A one-liner that needs a comment has failed the test twice.</li>
+        <li>If you cannot describe a function in one sentence without "and", split it.</li>
+        <li>Prefer the boring construction: a loop over a nested comprehension, a dict over a metaclass, a function over a one-method class.</li>
+      </ul>
+      <div class="note"><p>The question that settles most arguments: <em>if this breaks at 02:00 and I am on call, can I fix it?</em></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="DRY">
+  <h2>DRY – one fact, one place</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">the same rule, three times</span>
+      <pre data-lang="python">
+# invoices.py
+if country in ("BE", "NL", "LU"):
+    vat = amount * 0.21
+
+# quotes.py
+if country in ("BE", "NL"):        # ← stale
+    vat = amount * 0.21
+
+# report.py
+vat = amount * 0.21 if country == "BE" else 0
+</pre>
+      </div>
+      <div class="plate sm good" style="margin-top:1.2cqw">
+        <pre data-lang="python">
+# rules.py – the single source of truth
+VAT_RATES = {"BE": Decimal("0.21"), ...}
+
+def vat_for(country: str) -&gt; Decimal:
+    return VAT_RATES.get(country, Decimal("0"))
+</pre>
+      </div>
+    </div>
+    <div>
+      <p>DRY is about <b>knowledge</b>, not characters. "Luxembourg charges 21%" is one fact about the business; it should exist in exactly one place, and the tax office should be able to change it with one edit.</p>
+      <div class="trap">
+        <p><b>The rule of three.</b> Two similar blocks are a coincidence. Three are a pattern. Extracting after the first copy is guessing, and a wrong guess is expensive.</p>
+      </div>
+      <p style="margin-top:1.1cqw">Ask before extracting: <em>when this changes, must the other copy change too?</em> If no, they are not duplicates.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="DRY">
+  <h2>The duplication you should keep</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <span class="cap">two functions that merely looked alike</span>
+      <pre data-lang="python">
+def process(rows, is_invoice=False,
+            legacy=False, skip_vat=False):
+    if is_invoice and not legacy:
+        ...
+    elif legacy and skip_vat:
+        ...
+    else:
+        ...
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.4cqw">Every flag is a merged abstraction asking to be split again. Three booleans is eight paths, of which you tested two.</p>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Invoices and quotes both loop over rows and sum amounts – but they change for <b>different reasons</b>, on different people's requests.</li>
+        <li>You can always delete a duplicate. Un-merging a wrong abstraction means unpicking every caller, so the flags accumulate instead.</li>
+      </ul>
+      <div class="note"><p><b>"Duplication is far cheaper than the wrong abstraction."</b> – Sandi Metz. The one sentence to take from this section.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="YAGNI">
+  <h2>YAGNI – you are not going to need it</h2>
+  <div class="body cols">
+    <div>
+      <ul class="bare">
+        <li>The plugin system for the second vendor who never signed.</li>
+        <li>The <code>AbstractBaseExporter</code> with exactly one implementation.</li>
+        <li>The config flag nobody has ever set to anything but the default.</li>
+        <li>The <code>utils.py</code> full of helpers written for a use case that changed before release.</li>
+      </ul>
+      <p style="margin-top:1.2cqw">Every unused branch is code you keep reading, testing, upgrading and explaining to new joiners – for a benefit that never arrives.</p>
+      <div class="note"><p>Build what you were asked for. Make it <b>easy to change</b>, not ready for everything.</p></div>
+    </div>
+    <div class="plate sm">
+      <span class="cap">what "easy to change" actually means</span>
+      <pre data-lang="text">
+small pieces with clear names
+no hidden state
+dependencies passed in
+tests that run in a second
+a deletable file per concern
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Not: hooks, registries and interfaces for futures you invented in the design meeting.</p>
+      <div class="trap" style="margin-top:1.2cqw">
+        <p><b>Not an excuse for a 300-line function.</b> "We'll clean it up next sprint" is a promise nobody has kept.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The script">
+  <h2>The script everybody writes first</h2>
+  <div class="body cols wide-left">
+    <div class="plate xs" style="--code:1.14cqw">
+      <span class="cap">nightly_sales.py – it works, and it is a liability</span>
+      <pre data-lang="python">
+def run():
+    rate = requests.get(RATE_URL).json()["USD"]
+    totals = {}
+    with open("/data/sales.csv") as f:
+        for row in csv.DictReader(f):
+            try:
+                d, m, y = row["date"].split("/")
+                day = date(int(y), int(m), int(d))
+            except Exception:
+                continue
+            if day != date.today():
+                continue
+            amount = float(row["amount"])
+            if row["country"] in ("BE", "NL", "LU"):
+                amount *= 1.21
+            if row["currency"] == "USD":
+                amount /= rate
+            totals[row["country"]] = (
+                totals.get(row["country"], 0) + amount)
+    with open("/reports/out.csv", "w") as out:
+        for country, total in totals.items():
+            out.write(f"{country},{total:.2f}\n")
+</pre>
+    </div>
+    <div>
+      <p class="lead">Nothing here is wrong. All of it is a problem.</p>
+      <table class="xs">
+        <tr><th>What it is</th><th>What it costs</th></tr>
+        <tr><td>Five reasons to change in one function</td><td>every request rewrites the same code</td></tr>
+        <tr><td>Reaches for the network, the paths and the clock</td><td>cannot be tested at all</td></tr>
+        <tr><td>A new format means editing the middle</td><td>working code regresses</td></tr>
+        <tr><td><code>except Exception: continue</code></td><td>rows vanish, nobody counts them</td></tr>
+        <tr><td><code>1.21</code>, <code>"BE"</code>, the URL, inline</td><td>the owner of the rule cannot see it</td></tr>
+      </table>
+      <p class="dim">Each principle that follows fixes one of these.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="SRP">
+  <h2>S – one reason to change</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">the same job, as five things</span>
+      <pre data-lang="python">
+def read_rows(path) -&gt; Iterator[dict]: ...
+def parse_row(raw) -&gt; Sale:        ...
+def apply_rules(sale, rates) -&gt; Sale: ...
+def totals(sales) -&gt; dict[str, Decimal]: ...
+def write_report(totals, sink) -&gt; None: ...
+
+def run(config, rates, today):
+    rows   = read_rows(config.input)
+    sales  = [parse_row(r) for r in rows]
+    priced = [apply_rules(s, rates) for s in sales]
+    write_report(totals(priced), config.output)
+</pre>
+    </div>
+    <div>
+      <p>A "reason to change" is <b>a person</b>. The vendor changes their export → <code>parse_row</code>. Finance changes VAT → <code>apply_rules</code>. Ops moves the output to S3 → <code>write_report</code>. Three requests, three separate edits, no shared blast radius.</p>
+      <ul class="bare">
+        <li>Each piece now fits in your head and takes a literal in a test.</li>
+        <li><code>run</code> reads like the description of the job, which is the best documentation you will write.</li>
+      </ul>
+      <div class="trap">
+        <p><b>SRP is not "one function, one line".</b> Split until each piece has a name that does not need "and" – then stop. Forty one-line functions is a different unreadable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="OCP">
+  <h2>O – open to new cases, closed to editing</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">adding a format edits nothing that works</span>
+      <pre data-lang="python">
+READERS: dict[str, Reader] = {
+    ".csv":   read_csv,
+    ".jsonl": read_jsonl,
+}
+
+def read_rows(path: Path) -&gt; Iterator[dict]:
+    try:
+        reader = READERS[path.suffix]
+    except KeyError:
+        raise UnsupportedFormat(path.suffix) from None
+    return reader(path)
+
+# next sprint, parquet arrives:
+READERS[".parquet"] = read_parquet
+</pre>
+    </div>
+    <div>
+      <p>Code that is not touched cannot regress. The pipeline, its tests and last quarter's numbers all stay exactly as they were.</p>
+      <ul class="bare">
+        <li>In Python the extension point is usually a <b>dict of functions</b>, a callable parameter, or a <code>Protocol</code> – not a class hierarchy. You almost never need <code>AbstractReader</code>.</li>
+        <li>The trigger to build it is the <b>second</b> real case, not the first imagined one. Until then, one function named <code>read_csv</code> is the right answer (YAGNI).</li>
+        <li>What makes the later change cheap is that parsing was already separate (SRP), not that you predicted parquet.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="LSP">
+  <h2>L – a subclass must not lie</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class Reader:
+    def read(self, path) -&gt; list[dict]:
+        ...
+
+class StreamingReader(Reader):
+    def read(self, path):
+        yield from ...        # a generator!
+
+class CachedReader(Reader):
+    def read(self, path):
+        if path not in self.cache:
+            raise KeyError(path)   # new failure
+
+rows = reader.read(p)
+len(rows)          # works, except for one
+</pre>
+    </div>
+    <div>
+      <p>Anywhere the parent works, every child must work, with no <code>isinstance</code> check at the call site. A subtype may accept <b>more</b> and promise <b>more</b> – never less.</p>
+      <p>Three ways people break it:</p>
+      <ul class="bare">
+        <li>Returning a different shape – a generator where a list was promised.</li>
+        <li>Raising something the parent never raised, or narrowing the arguments.</li>
+        <li>An override that is <code>raise NotImplementedError</code>: this is not a subtype.</li>
+      </ul>
+      <div class="note"><p>If the child cannot honour the contract, it is not a child. Hold one instead.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="ISP">
+  <h2>I – ask for the smallest thing that does the job</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">every fake in every test must implement all six</span>
+        <pre data-lang="python">
+class Storage(Protocol):
+    def read(self, name): ...
+    def write(self, name, data): ...
+    def delete(self, name): ...
+    def list(self, prefix): ...
+    def move(self, src, dst): ...
+    def stat(self, name): ...
+</pre>
+      </div>
+      <div class="plate sm good" style="margin-top:1.3cqw">
+        <span class="cap">what the report actually needs</span>
+        <pre data-lang="python">
+class SupportsWrite(Protocol):
+    def write(self, data: str) -&gt; int: ...
+
+def publish(report: str, sink: SupportsWrite):
+    sink.write(report)
+
+publish(text, open("out.csv", "w"))
+publish(text, io.StringIO())        # in a test
+</pre>
+      </div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>A <code>Protocol</code> is <b>structural</b>: anything with a matching method satisfies it. No inheritance, no registration, and it works with objects you do not own – an open file, a <code>StringIO</code>, a socket.</li>
+        <li>Every method you add to an interface is a method every implementation and every test double must provide. Six-method interfaces are why people give up and use <code>mock.MagicMock()</code>.</li>
+        <li>Often the smallest interface is not an interface at all: pass the <b>function</b>. <code>def publish(report, write: Callable[[str], None])</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="DIP">
+  <h2>D – the logic states what it needs; <code>main</code> decides what that is</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">before: the logic reaches out and grabs</span>
+      <pre data-lang="python">
+def summarise(rows):
+    rate = requests.get(RATE_URL).json()["USD"]
+    today = date.today()
+    ...
+</pre>
+      </div>
+      <div class="plate sm good" style="margin-top:1.2cqw">
+        <span class="cap">after: it receives</span>
+        <pre data-lang="python">
+class Rates(Protocol):
+    def eur(self, day: date,
+            currency: str) -&gt; Decimal: ...
+
+def summarise(rows, rates: Rates,
+              today: date) -&gt; dict: ...
+
+# production – the composition root
+summarise(rows, EcbRates(session), date.today())
+
+# test – no network, no clock, no flakes
+summarise(rows, FixedRates("0.90"),
+          date(2026, 1, 31))
+</pre>
+      </div>
+    </div>
+    <div>
+      <p>High-level policy must not import low-level detail. They meet at an interface the <b>policy</b> owns, so <code>requests</code>, <code>boto3</code> and the clock stay out of your rules.</p>
+      <ul class="bare">
+        <li>One habit: <b>pass the dependency in</b> instead of reaching for it. That is all "dependency injection" means – no framework required.</li>
+        <li>One place, <code>main()</code>, knows the real implementations and wires them together.</li>
+        <li>This is what turns an untestable script into a testable program, which is why it is last.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="SOLID">
+  <h2>SOLID, translated out of Java</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th></th><th>The rule</th><th>In Python it usually means</th></tr>
+      <tr><td><b>S</b></td><td>One reason to change</td><td>A function or module per stage; keep I/O out of the rules</td></tr>
+      <tr><td><b>O</b></td><td>Open to extension, closed to modification</td><td>A dict of handlers, or a function passed in – not an edit to a working function</td></tr>
+      <tr><td><b>L</b></td><td>Subtypes are substitutable</td><td>If the override would surprise the caller, use composition instead</td></tr>
+      <tr><td><b>I</b></td><td>Many small interfaces beat one fat one</td><td>A <code>Protocol</code> with one or two methods – or just pass the callable</td></tr>
+      <tr><td><b>D</b></td><td>Depend on abstractions</td><td>Inject the reader, the clock, the rate service; <code>main()</code> wires it up</td></tr>
+    </table>
+    <div class="cols" style="margin-top:1.5cqw">
+      <div class="note"><p>Duck typing gives you O, L, I and D with a fraction of the ceremony Java needs. Take the ideas; leave the <code>AbstractFactoryBean</code>.</p></div>
+      <div class="note"><p>Two of the five are really one habit each: <b>separate the stages</b> (S, O) and <b>pass in what you use</b> (I, D). L is a warning about inheritance.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Over-engineering">
+  <h2>The other side of the ledger</h2>
+  <div class="body cols">
+    <div>
+      <h3>You over-applied them when</h3>
+      <ul class="bare">
+        <li>An interface has exactly one implementation and no test double.</li>
+        <li>Classes are named <code>...Manager</code>, <code>...Helper</code>, <code>...Handler</code>, <code>...Factory</code> – names that describe no thing.</li>
+        <li>Adding one field means editing four files.</li>
+        <li>There is a config flag for behaviour nobody has ever switched.</li>
+        <li>You must open three files to follow one request.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>You under-applied them when</h3>
+      <ul class="bare">
+        <li>There is a function you are afraid to change.</li>
+        <li>A test needs the network, a real database, or the right day of the month.</li>
+        <li>The same fix has to be applied in three places, and someone always misses one.</li>
+        <li>Two people cannot work on the file at once without a conflict.</li>
+        <li>New joiners ask the same question about the same function every time.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.4cqw"><p><b>The honest default:</b> write it plainly, add structure at the second or third real reason, and delete the abstractions that never paid for themselves. Every abstraction charges the reader one jump; make it earn that.</p></div>
+</section>
+
+<section class="slide task" data-title="Exercises: design">
+  <div class="badge">Exercises, 15 min</div>
+  <h2>Refactoring, with the principles in hand</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li><b>DRY.</b> One VAT rule, three functions, one stale copy. Extract it so the tax office needs one edit.</li>
+      <li><b>KISS.</b> Rewrite a one-line index trick as code a reviewer can read, with identical answers.</li>
+      <li><b>SRP.</b> Split <code>load_and_clean_and_report</code> into the stages it already contains.</li>
+      <li><b>OCP.</b> Add a <code>.jsonl</code> reader without editing the dispatcher.</li>
+      <li><b>LSP.</b> A subclass raises where its parent returned a default. Fix it without touching the caller.</li>
+      <li><b>DIP.</b> A function calls <code>date.today()</code> and a rate service. Make it deterministic, and test it with a four-line fake.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">08_design.py</span>
+      <pre data-lang="console">
+$ cd exercises/python
+$ python3 08_design.py
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">These assertions test the <b>design</b>: one fails while a dependency is hard-coded, another while the rule is written twice.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Errors">
+  <div class="marker">Section 8</div>
+  <h1>When things break</h1>
+</section>
+
+<section class="slide" data-title="Errors">
+  <h2>Read the traceback from the bottom</h2>
+  <div class="body cols wide-right">
+    <div>
+      <ul class="bare">
+        <li><b>Last line first.</b> The error type and message tell you what went wrong.</li>
+        <li><b>Then the last frame</b> that is in <em>your</em> code – that is where to look.</li>
+        <li>The frames above are the call chain that got you there, oldest at the top.</li>
+      </ul>
+      <div class="note"><p>Paste the last line into a search engine before you paste anything else. Most Python errors have been asked about a thousand times.</p></div>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+Traceback (most recent call last):
+  File "report.py", line 22, in &lt;module&gt;
+    main()
+  File "report.py", line 15, in main
+    total = summarise(rows)
+  File "report.py", line 8, in summarise
+    return sum(r["amount"] for r in rows)
+KeyError: 'amount'
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Errors">
+  <h2><code>try</code> / <code>except</code>: handle what you can predict</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+try:
+    age = int(input("Age: "))
+except ValueError:
+    print("That was not a whole number")
+else:
+    print(f"Next year you turn {age + 1}")
+finally:
+    print("done")
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.4cqw"><code>else</code> runs only if nothing was raised. <code>finally</code> runs no matter what – even if you return.</p>
+    </div>
+    <div>
+      <div class="trap">
+        <p><b>Never write a bare <code>except:</code></b></p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin:0.4cqw 0">
+try:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;risky()<br>
+except:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pass
+        </div>
+        <p>It swallows typos, <kbd>Ctrl</kbd>+<kbd>C</kbd> and out-of-memory alike, and leaves you with a program that fails silently at 3am.</p>
+      </div>
+      <p style="margin-top:1.2cqw">Catch the specific error you expect. If you cannot name it, you are not ready to handle it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Errors">
+  <h2>Raising: fail early, fail loudly</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+def withdraw(balance, amount):
+    if amount &lt;= 0:
+        raise ValueError("amount must be &gt; 0")
+    if amount &gt; balance:
+        raise ValueError(
+            f"only {balance} available"
+        )
+    return balance - amount
+
+class InsufficientFunds(ValueError):
+    """Account cannot cover the amount."""
+</pre>
+    </div>
+    <div>
+      <p>A function that is given nonsense should refuse, not return a wrong answer. The error message is for the person who will read it at 3am – include the values.</p>
+      <table class="xs" style="margin-top:1.2cqw">
+        <tr><th>Raise</th><th>When</th></tr>
+        <tr><td><code>ValueError</code></td><td>right type, wrong value</td></tr>
+        <tr><td><code>TypeError</code></td><td>wrong type entirely</td></tr>
+        <tr><td><code>KeyError</code> / <code>IndexError</code></td><td>not in the container</td></tr>
+        <tr><td><code>FileNotFoundError</code></td><td>missing path</td></tr>
+        <tr><td>your own subclass</td><td>callers need to catch just this</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Exception design">
+  <h2>Design the exceptions your callers will catch</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class PipelineError(Exception):
+    """Base for everything this package raises."""
+
+class UnsupportedFormat(PipelineError):
+    ...
+
+class InvalidRow(PipelineError):
+    def __init__(self, line: int, reason: str):
+        super().__init__(f"line {line}: {reason}")
+        self.line = line
+        self.reason = reason
+
+# the caller can be precise, or general
+except InvalidRow as err:
+    bad.append(err.line)
+except PipelineError:
+    log.exception("pipeline failed")
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><b>One base class per package.</b> Callers catch the base, or one subclass – either way, not bare <code>except Exception</code>.</li>
+        <li><b>Put the data on the exception</b>, not only in the message. Code that parses your error string is code you have broken.</li>
+        <li><b>Do not leak your dependencies.</b> If <code>requests.HTTPError</code> escapes, every caller now depends on <code>requests</code>. Wrap it.</li>
+      </ul>
+      <div class="plate sm" style="margin-top:1.2cqw">
+        <pre data-lang="python">
+except requests.HTTPError as exc:
+    raise RateUnavailable(day) from exc
+</pre>
+      </div>
+      <p style="margin-top:0.9cqw;font-size:1.45cqw"><code>from exc</code> keeps the original traceback; <code>from None</code> hides it, deliberately.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="EAFP and retries">
+  <h2>Ask forgiveness – and retry only what is safe to retry</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">LBYL: two lookups and a race</span>
+        <pre data-lang="python">
+if path.exists():
+    data = path.read_text()   # deleted meanwhile?
+</pre>
+      </div>
+      <div class="plate sm good" style="margin-top:1.2cqw">
+        <span class="cap">EAFP: one attempt, one answer</span>
+        <pre data-lang="python">
+try:
+    data = path.read_text(encoding="utf-8")
+except FileNotFoundError:
+    data = ""
+</pre>
+      </div>
+      <p style="margin-top:1.1cqw">Between the check and the use, the world changes: files vanish, keys expire, rows are deleted. The <code>try</code> version cannot be wrong about that.</p>
+    </div>
+    <div class="plate sm">
+      <span class="cap">the retry that saves the 02:00 run</span>
+      <pre data-lang="python">
+def with_retry(call, attempts=3, base=0.5):
+    for attempt in range(attempts):
+        try:
+            return call()
+        except TransientError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(base * 2 ** attempt
+                       + random.random() * 0.1)
+</pre>
+      <div class="trap" style="margin-top:1.2cqw">
+        <p><b>Retry only the transient and the idempotent.</b> A timeout on a read: yes. A <code>POST</code> that charges a card: never, without an idempotency key. Back off, add jitter, cap the attempts, then fail loudly. <code>tenacity</code> does this properly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Logging">
+  <h2><code>logging</code>, not <code>print</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+import logging
+log = logging.getLogger(__name__)
+
+log.info("read %s rows from %s", len(rows), path)
+log.warning("skipped %s invalid rows", len(bad))
+
+try:
+    publish(report)
+except PipelineError:
+    log.exception("publish failed")  # + traceback
+    raise
+
+# configured once, in main()
+logging.basicConfig(level=logging.INFO)
+</pre>
+    </div>
+    <div>
+      <table class="xs">
+        <tr><th>Level</th><th>Means</th></tr>
+        <tr><td><code>DEBUG</code></td><td>for you, while developing</td></tr>
+        <tr><td><code>INFO</code></td><td>the job did the expected thing</td></tr>
+        <tr><td><code>WARNING</code></td><td>survivable, somebody should look</td></tr>
+        <tr><td><code>ERROR</code></td><td>this run failed its job</td></tr>
+        <tr><td><code>CRITICAL</code></td><td>wake somebody up</td></tr>
+      </table>
+      <ul class="bare" style="margin-top:1.2cqw">
+        <li><code>print</code> has no level, no timestamp and no module: in a container it is noise you cannot filter.</li>
+        <li>Pass values as <b>arguments</b>, not f-strings – the formatting is skipped when the level is off.</li>
+        <li><b>Never log secrets, tokens or personal data.</b> Logs are copied and kept far longer than you think.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Modules and packages">
+  <div class="marker">Section 9</div>
+  <h1>Modules and packages</h1>
+</section>
+
+<section class="slide" data-title="Modules and packages">
+  <h2>Every <code>.py</code> file is a module</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">four ways to import, best first</span>
+      <pre data-lang="python">
+import math
+math.pi
+
+from math import pi, sqrt
+sqrt(16)
+
+import pandas as pd          # conventional
+pd.read_csv("data.csv")
+
+from math import *           # never
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.4cqw"><code>import *</code> dumps unknown names into your file and quietly shadows your own.</p>
+    </div>
+    <div>
+      <div class="plate sm">
+        <span class="cap">your own modules work the same</span>
+        <pre data-lang="python">
+# geometry.py
+from math import pi
+
+def area(radius):
+    return pi * radius ** 2
+
+# main.py
+from geometry import area
+print(area(3))
+</pre>
+      </div>
+      <p style="margin-top:1.1cqw">Imports go at the top of the file, in three groups: standard library, third party, then your own.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Modules and packages">
+  <h2><code>if __name__ == "__main__"</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">geometry.py</span>
+      <pre data-lang="python">
+from math import pi
+
+def area(radius):
+    return pi * radius ** 2
+
+if __name__ == "__main__":
+    radius = float(input("Radius: "))
+    print(f"Area: {area(radius):.2f}")
+</pre>
+    </div>
+    <div>
+      <p>Python sets <code>__name__</code> to <code>"__main__"</code> in the file you ran, and to the module's name in every file you imported.</p>
+      <p>So the block runs when you do <code>python3 geometry.py</code>, and stays quiet when someone does <code>from geometry import area</code>.</p>
+      <div class="trap">
+        <p><b>Without it,</b> importing your module executes its <code>input()</code> calls and prints – which is why a notebook that imports your script suddenly hangs waiting for keyboard input.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Modules and packages">
+  <h2>Virtual environments: one set of packages per project</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p>Installing packages globally means project A's <code>pandas 1.5</code> fights project B's <code>pandas 2.2</code>. A virtual environment is a private <code>site-packages</code> folder for one project.</p>
+      <ul class="bare">
+        <li>Create it inside the project, call it <code>.venv</code>, and never commit it.</li>
+        <li><code>which python3</code> tells you whether it is active.</li>
+        <li>New project, new environment. They are disposable – delete and recreate freely.</li>
+      </ul>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+$ cd my-project
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+(.venv) $ which python3
+/my-project/.venv/bin/python3
+
+(.venv) $ pip install pandas
+(.venv) $ pip freeze &gt; requirements.txt
+(.venv) $ deactivate
+$
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Modules and packages">
+  <h2>Declaring what your project needs</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">requirements.txt – the classic</span>
+      <pre data-lang="text">
+pandas==2.2.2
+requests==2.32.3
+python-dotenv==1.0.1
+</pre>
+      <pre data-lang="console" style="margin-top:0.9cqw">
+$ pip install -r requirements.txt
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">pyproject.toml – the modern one</span>
+      <pre data-lang="text">
+[project]
+name = "roots-report"
+version = "0.1.0"
+requires-python = "&gt;=3.11"
+dependencies = [
+    "pandas&gt;=2.2",
+    "requests&gt;=2.32",
+]
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>Pin exact versions for anything that runs in production. "It worked last month" is not a deployment strategy. <code>uv</code> is the fast modern tool that does venv, install and lock in one – <code>uv sync</code>, <code>uv run script.py</code>.</p></div>
+</section>
+
+<section class="slide" data-title="Modules and packages">
+  <h2>What a real project looks like</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="text">
+roots-report/
+├── .venv/               ← not in git
+├── .gitignore
+├── README.md
+├── pyproject.toml
+├── src/
+│   └── roots_report/
+│       ├── __init__.py
+│       ├── load.py
+│       └── transform.py
+└── tests/
+    └── test_transform.py
+</pre>
+    </div>
+    <div>
+      <p>A directory with an <code>__init__.py</code> is a <b>package</b> – a module that contains modules. That is all the word means.</p>
+      <ul class="bare">
+        <li>One job per module. <code>load.py</code> reads, <code>transform.py</code> computes.</li>
+        <li>Tests mirror the source layout, so you always know where a test lives.</li>
+        <li><code>README.md</code> answers: what is this, how do I run it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Modules and packages">
+  <h2>The standard library is already installed</h2>
+  <div class="body cols three">
+    <div>
+      <h3>Every day</h3>
+      <ul class="bare">
+        <li><code>pathlib</code> – paths, properly</li>
+        <li><code>json</code> – read/write JSON</li>
+        <li><code>datetime</code> – dates and times</li>
+        <li><code>collections</code> – <code>Counter</code>, <code>defaultdict</code></li>
+        <li><code>os</code>, <code>sys</code> – environment, arguments</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Often</h3>
+      <ul class="bare">
+        <li><code>csv</code>, <code>sqlite3</code></li>
+        <li><code>re</code> – regular expressions</li>
+        <li><code>itertools</code>, <code>functools</code></li>
+        <li><code>logging</code> – instead of <code>print</code></li>
+        <li><code>argparse</code> – command-line flags</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Then PyPI</h3>
+      <ul class="bare">
+        <li><code>requests</code>, <code>httpx</code> – HTTP</li>
+        <li><code>pandas</code>, <code>polars</code> – tables</li>
+        <li><code>pytest</code> – tests</li>
+        <li><code>pydantic</code> – validation</li>
+        <li><code>ruff</code> – lint and format</li>
+      </ul>
+    </div>
+  </div>
+  <div class="plate sm" style="margin-top:1.6cqw">
+    <pre data-lang="python">
+from pathlib import Path
+
+for csv_file in Path("data").glob("*.csv"):      # no string juggling
+    print(csv_file.stem, csv_file.stat().st_size)
+</pre>
+  </div>
+</section>
+
+<section class="slide" data-title="Dependency direction">
+  <h2>Which module is allowed to import which</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="text">
+src/roots_report/
+├── domain.py    types + rules
+│                imports nothing of ours
+├── parsing.py   text  → domain
+├── sources.py   files, HTTP → text
+├── report.py    domain → output
+└── cli.py       wires it all up
+</pre>
+      <div class="out" style="margin-top:1.2cqw"><span class="cap">the only rule</span>arrows point inwards:
+cli → sources → parsing → domain
+domain imports none of them</div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>The core – your types and your rules – must not know that a CSV, an HTTP call or S3 exists. That is what keeps it testable and the edges replaceable.</li>
+        <li>Put a rule where its owner would look for it, not next to whatever calls it first.</li>
+      </ul>
+      <div class="trap">
+        <p><b>A circular import is a design message, not a Python quirk.</b></p>
+        <div style="font-family:var(--mono);font-size:1.25cqw;margin:0.4cqw 0">ImportError: cannot import name 'Sale'<br>from partially initialized module ...</div>
+        <p>Two modules that need each other are one module, or there is a third thing they both need. Importing inside a function silences the error and keeps the tangle.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Configuration">
+  <h2>Configuration lives outside the code</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+@dataclass(frozen=True)
+class Settings:
+    input_dir: Path
+    rate_url: str
+    api_token: str
+
+    @classmethod
+    def from_env(cls) -&gt; "Settings":
+        return cls(
+            input_dir=Path(os.environ.get(
+                "INPUT_DIR", "data")),
+            rate_url=os.environ["RATE_URL"],
+            api_token=os.environ["API_TOKEN"],
+        )
+
+def main():
+    settings = Settings.from_env()   # once
+    run(settings)
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>The same artifact runs in dev, staging and production. What differs is the <b>environment</b>, never an <code>if ENV == "prod"</code> inside a function.</li>
+        <li>Read it <b>once, at startup</b>, into one frozen object, and pass it down. A module calling <code>os.environ</code> in the middle hides its inputs.</li>
+        <li><code>os.environ["API_TOKEN"]</code>, not <code>.get</code>: a missing secret should stop the process at second zero.</li>
+      </ul>
+      <div class="trap"><p><b>Secrets never enter git.</b> <code>.env</code> is local only and belongs in <code>.gitignore</code>. A token in a commit is a token you must rotate.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Tests">
+  <div class="marker">Section 10</div>
+  <h1>Tests: how you stop being afraid of your own code</h1>
+</section>
+
+<section class="slide" data-title="pytest">
+  <h2>A test is an assertion you decided to keep</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">tests/test_rules.py</span>
+      <pre data-lang="python">
+import pytest
+from roots_report.rules import vat_for, UnknownCountry
+
+def test_belgian_vat():
+    assert vat_for("BE") == Decimal("0.21")
+
+def test_unknown_country_is_rejected():
+    with pytest.raises(UnknownCountry):
+        vat_for("ZZ")
+</pre>
+      <pre data-lang="console" style="margin-top:0.9cqw">
+$ pytest -q
+..                              [100%]
+2 passed in 0.03s
+</pre>
+    </div>
+    <div>
+      <p>You have been writing tests all day – every <code>assert</code> at the bottom of an exercise file is one. <code>pytest</code> is the same idea with a runner and no boilerplate.</p>
+      <ul class="bare">
+        <li>Files <code>test_*.py</code>, functions <code>test_*</code>, plain <code>assert</code>. On failure it prints both sides.</li>
+        <li><code>-x</code> stop at the first failure, <code>-k name</code> select, <code>--lf</code> only what failed last time.</li>
+      </ul>
+      <div class="note"><p>The reason to write them is not correctness today. It is that you can <b>change the code next month</b> without reading all of it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="parametrize">
+  <h2>One test, many cases</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+@pytest.mark.parametrize("country,expected", [
+    ("BE", "0.21"),
+    ("NL", "0.21"),
+    ("FR", "0.20"),
+    ("be", "0.21"),      # lowercase input
+    ("",   "0.00"),      # empty cell
+])
+def test_vat(country, expected):
+    assert vat_for(country) == Decimal(expected)
+</pre>
+      <pre data-lang="console" style="margin-top:0.9cqw">
+$ pytest -q
+....F                           [100%]
+test_vat[be-0.21] FAILED
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Each row becomes a separate test with its own name, so a failure tells you <em>which case</em> broke without reading the loop.</li>
+        <li>The interesting rows are the edges: empty, lowercase, missing, zero, negative, the one with a comma in it, the one from last week's incident.</li>
+        <li><b>Every bug you fix earns a row.</b> Twenty seconds of typing, and that bug can never come back unnoticed.</li>
+      </ul>
+      <div class="note"><p>Also worth knowing on day one: <code>pytest.approx</code> for floats, and the <code>tmp_path</code> fixture for tests that must touch the filesystem.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Fakes">
+  <h2>Fakes beat mocks – and injection is what makes them possible</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+class FixedRates:
+    """A Rates implementation for tests."""
+    def __init__(self, value):
+        self.value = Decimal(value)
+
+    def eur(self, day, currency):
+        return self.value
+
+def test_usd_rows_are_converted():
+    rows = [Sale("1", date(2026, 1, 5),
+                 Decimal("100"), "US", "USD")]
+
+    totals = summarise(rows, FixedRates("0.90"),
+                       today=date(2026, 1, 5))
+
+    assert totals == {"US": Decimal("90.00")}
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>A fake is four lines and breaks loudly if the interface changes. <code>MagicMock</code> silently accepts anything, including the method you renamed.</li>
+        <li>Asserting on <em>calls</em> tests how the code works; asserting on <em>results</em> tests what it does. Only the second survives a refactor.</li>
+        <li><b>If a test needs <code>mock.patch</code> to reach inside a function, the design is the problem.</b> Fix the code, not the test.</li>
+      </ul>
+      <div class="note"><p>The payoff for DIP: this test needs no network and no files, and gives the same answer on any day of the year.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="What to test">
+  <h2>What to test, and what to leave alone</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th>Code</th><th>Test it?</th><th>Why</th></tr>
+      <tr><td>Business rules, calculations, edge cases</td><td><b>Always</b></td><td>Cheap, fast, and this is where the money goes wrong</td></tr>
+      <tr><td>Parsers and serialisers</td><td><b>Always</b>, with ugly real data</td><td>The boundary is where reality arrives</td></tr>
+      <tr><td>Error paths – the bad row, the timeout</td><td>Yes</td><td>Never exercised in dev, always at 02:00</td></tr>
+      <tr><td><code>main()</code> and wiring</td><td>One smoke test</td><td>Catches the import you forgot</td></tr>
+      <tr><td>Third-party libraries</td><td>No</td><td>That is their test suite's job</td></tr>
+      <tr><td>Private helpers</td><td>Through the public function</td><td>Otherwise every refactor breaks the tests</td></tr>
+    </table>
+    <div class="cols" style="margin-top:1.5cqw">
+      <div class="note"><p>Aim for the tests you would want the morning the vendor sends a broken file – not for a coverage percentage.</p></div>
+      <div class="note"><p><b>A bug fixed without a test is a bug scheduled to return.</b> Write the failing test first.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Advanced concepts">
+  <div class="marker">Section 11</div>
+  <h1>Advanced concepts</h1>
+</section>
+
+<section class="slide" data-title="Advanced concepts">
+  <h2>Generators: produce values one at a time</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">builds the whole list first</span>
+      <pre data-lang="python">
+def first_n(n):
+    result = []
+    num = 0
+    while num &lt; n:
+        result.append(num)
+        num += 1
+    return result
+
+first_n(5)     # [0, 1, 2, 3, 4]
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">yields, then waits</span>
+      <pre data-lang="python">
+def first_n(n):
+    num = 0
+    while num &lt; n:
+        yield num       # hand one back
+        num += 1
+
+first_n(5)     # &lt;generator object ...&gt;
+list(first_n(5))       # [0, 1, 2, 3, 4]
+for x in first_n(5):
+    print(x)
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>One <code>yield</code> anywhere in the body turns the whole function into a generator. Calling it does nothing until you iterate.</p></div>
+</section>
+
+<section class="slide" data-title="Advanced concepts">
+  <h2>Why it matters: the work happens as you consume it</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+import time
+
+def slow_list(n):
+    out = []
+    for i in range(n):
+        time.sleep(0.5)
+        out.append(i)
+    return out
+
+def slow_gen(n):
+    for i in range(n):
+        time.sleep(0.5)
+        yield i
+</pre>
+    </div>
+    <div>
+      <div class="out"><span class="cap">list version</span>Building took 5.01s
+Looping took 0.00s</div>
+      <div class="out" style="margin-top:1cqw"><span class="cap">generator version</span>Building took 0.00s
+Looping took 5.01s</div>
+      <ul class="bare" style="margin-top:1.3cqw">
+        <li>Same total time – but the first result arrives immediately.</li>
+        <li>Memory stays flat, whatever <code>n</code> is. This is how you read a 40 GB log file on a laptop.</li>
+        <li><code>break</code> out early and the rest is never computed.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Advanced concepts">
+  <h2>Context managers: guarantee the cleanup</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+# the leak
+f = open("data.txt")
+rows = f.read()
+process(rows)      # raises → never closed
+f.close()
+
+# the fix
+with open("data.txt") as f:
+    rows = f.read()
+# closed here, exception or not
+
+print(f.closed)    # True
+</pre>
+    </div>
+    <div>
+      <p><code>with</code> calls <code>__enter__</code> on the way in and <code>__exit__</code> on the way out – including when the body raises, returns or breaks.</p>
+      <div class="note">
+        <p>You will meet it for files, database connections, HTTP sessions, locks, temporary directories and timers. Whenever something must be released, there is a context manager for it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Advanced concepts">
+  <h2>Writing your own context manager</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">as a class</span>
+      <pre data-lang="python">
+class FileManager:
+    def __init__(self, name, mode):
+        self.name, self.mode = name, mode
+
+    def __enter__(self):
+        self.file = open(self.name, self.mode)
+        return self.file
+
+    def __exit__(self, exc_type, exc, tb):
+        self.file.close()
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">as a generator – usually nicer</span>
+      <pre data-lang="python">
+from contextlib import contextmanager
+
+@contextmanager
+def file_manager(name, mode):
+    file = open(name, mode)
+    try:
+        yield file        # body runs here
+    finally:
+        file.close()
+
+with file_manager("data.txt", "r") as f:
+    print(f.read())
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>Everything before the <code>yield</code> is setup, everything after is teardown, and <code>finally</code> makes the teardown unconditional.</p></div>
+</section>
+
+<section class="slide" data-title="Advanced concepts">
+  <h2>Decorators: wrap a function without editing it</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+import functools, time
+
+def timed(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        print(f"{func.__name__}: "
+              f"{time.time() - start:.2f}s")
+        return result
+    return wrapper
+
+@timed
+def load(rows):
+    time.sleep(1)
+    return rows
+
+load(500)
+</pre>
+    </div>
+    <div>
+      <p>A decorator is a function that takes a function and returns a replacement.</p>
+      <div class="plate sm" style="margin-top:1cqw">
+        <span class="cap">@timed is just this</span>
+        <pre data-lang="python">
+load = timed(load)
+</pre>
+      </div>
+      <ul class="bare" style="margin-top:1.2cqw">
+        <li><code>*args, **kwargs</code> so the wrapper accepts any signature.</li>
+        <li><code>return result</code> – forget it and the function returns <code>None</code>.</li>
+        <li><code>@functools.wraps</code> keeps the original name and docstring.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Advanced concepts">
+  <h2>Decorators you will actually meet</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th>Decorator</th><th>Does</th></tr>
+      <tr><td><code>@functools.cache</code></td><td>Remembers results per argument. Turns the recursive Fibonacci from slow to instant.</td></tr>
+      <tr><td><code>@dataclass</code></td><td>Writes <code>__init__</code>, <code>__repr__</code> and <code>__eq__</code> for you.</td></tr>
+      <tr><td><code>@property</code></td><td>Makes a method callable as an attribute: <code>account.balance</code>, computed on read.</td></tr>
+      <tr><td><code>@staticmethod</code> / <code>@classmethod</code></td><td>A method that needs no instance / gets the class instead of the instance.</td></tr>
+      <tr><td><code>@pytest.fixture</code></td><td>Supplies test data or a set-up resource to tests that ask for it.</td></tr>
+      <tr><td><code>@app.get("/health")</code></td><td>Registers a function as an HTTP endpoint (FastAPI, Flask).</td></tr>
+    </table>
+    <div class="plate sm" style="margin-top:1.6cqw">
+      <pre data-lang="python">
+from functools import cache
+
+@cache
+def fib(n):
+    return n if n &lt;= 1 else fib(n - 1) + fib(n - 2)
+
+fib(100)          # instant; without @cache, effectively never finishes
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="itertools">
+  <h2><code>itertools</code>: the loops you no longer write</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="python">
+from itertools import (islice, chain, groupby,
+                       batched, accumulate)
+
+islice(rows, 5)          # first 5 of anything
+chain(file_a, file_b)    # one stream from many
+batched(rows, 1_000)     # 3.12+: fixed chunks
+accumulate(amounts)      # running total
+groupby(sorted(rows, key=k), key=k)
+
+from functools import reduce, partial, lru_cache
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">2 million rows, 1000 at a time, flat memory</span>
+      <pre data-lang="python">
+for chunk in batched(parse(read_lines(paths)),
+                     1_000):
+    cursor.executemany(INSERT, chunk)
+    connection.commit()
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Nothing is read before the first chunk is needed, and no list of two million rows ever exists. The database gets the batch size it likes, and a failure costs you one chunk.</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>These are all lazy: they return iterators, so they compose without materialising anything. <code>list()</code> when you actually need the data twice.</p></div>
+</section>
+
+<section class="slide" data-title="Generator pipelines">
+  <h2>A pipeline of generators is the shape of most ingestion code</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="python">
+def read_lines(paths):
+    for path in paths:
+        with path.open(encoding="utf-8") as handle:
+            yield from handle
+
+def parse(lines):
+    for number, line in enumerate(lines, 1):
+        try:
+            yield Sale.from_line(line)
+        except ValueError as err:
+            log.warning("line %s: %s", number, err)
+
+def since(sales, day):
+    return (s for s in sales if s.day &gt;= day)
+
+total = sum(s.amount for s in
+            since(parse(read_lines(paths)), cutoff))
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Each stage is a few lines and can be tested by handing it three strings in a list.</li>
+        <li>Memory stays flat for ten rows or a hundred gigabytes: nothing is read until <code>sum</code> pulls on the chain.</li>
+        <li>You can insert a stage – dedupe, filter, counter – without touching the others.</li>
+      </ul>
+      <div class="trap">
+        <p><b>Two costs.</b> You can walk it once. And a traceback points at the consumer, not at the stage that produced the bad value – which is why <code>parse</code> logs the line number.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Case study">
+  <div class="marker">Section 12</div>
+  <h1>Case study: the job that runs at 02:00</h1>
+</section>
+
+<section class="slide" data-title="The brief">
+  <h2>The brief</h2>
+  <div class="body cols">
+    <div>
+      <h3>What it must do</h3>
+      <ul class="bare">
+        <li>Every night, read yesterday's sales export from a vendor drop folder.</li>
+        <li>Add VAT per country, convert non-EUR amounts at that day's rate.</li>
+        <li>Write one report per country to the reporting bucket.</li>
+        <li>Report how many rows were rejected, and why.</li>
+      </ul>
+      <h3 style="margin-top:1.3cqw">What is not negotiable</h3>
+      <ul class="bare">
+        <li>A bad row must never be silently dropped.</li>
+        <li>Re-running the job for the same day must be safe.</li>
+        <li>It must fail loudly rather than write half a report.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What everyone knows will change</h3>
+      <table class="xs">
+        <tr><th>Change</th><th>Arrives from</th></tr>
+        <tr><td>The vendor switches CSV → JSONL</td><td>the vendor, with two weeks' notice</td></tr>
+        <tr><td>A new country, a new VAT rate</td><td>finance, on a Friday</td></tr>
+        <tr><td>Output moves from disk to S3</td><td>platform team</td></tr>
+        <tr><td>The rate service is replaced</td><td>procurement</td></tr>
+        <tr><td>Someone wants it as a backfill for 90 days</td><td>analytics, urgently</td></tr>
+      </table>
+      <div class="note" style="margin-top:1.2cqw"><p>None of these are hypothetical. The design question is not "will it change" but <b>"how much do I touch when it does"</b>.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The shape">
+  <h2>Five files, and the direction of every arrow</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="text">
+src/nightly/
+├── domain.py    Sale, Rejected, Totals
+├── rules.py     VAT, conversion   (pure)
+├── parsing.py   text  → Sale | Rejected
+├── io.py        readers, writers, rate client
+├── pipeline.py  the stages, wired as functions
+└── cli.py       config, logging, main()
+
+tests/
+├── test_rules.py     literals only
+├── test_parsing.py   one real ugly file
+└── test_pipeline.py  fakes for io
+</pre>
+    </div>
+    <div>
+      <table class="xs">
+        <tr><th>File</th><th>One reason to change</th></tr>
+        <tr><td><code>rules.py</code></td><td>finance changes a rate</td></tr>
+        <tr><td><code>parsing.py</code></td><td>the vendor changes their export</td></tr>
+        <tr><td><code>io.py</code></td><td>the platform moves the storage</td></tr>
+        <tr><td><code>pipeline.py</code></td><td>the steps of the job change</td></tr>
+        <tr><td><code>cli.py</code></td><td>how it is invoked or configured</td></tr>
+      </table>
+      <p style="margin-top:1.2cqw"><code>domain.py</code> and <code>rules.py</code> import nothing of ours and nothing from PyPI. That is why their tests run in milliseconds and never flake.</p>
+      <p class="dim">Five files is not ceremony – it is the same 90 lines, cut where the reasons to change already were.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The core">
+  <h2>The core: types and rules, no I/O in sight</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">domain.py</span>
+      <pre data-lang="python">
+@dataclass(frozen=True, slots=True)
+class Sale:
+    order_id: str
+    day: date
+    amount: Decimal
+    currency: str
+    country: str
+
+@dataclass(frozen=True, slots=True)
+class Rejected:
+    line: int
+    raw: str
+    reason: str
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">rules.py</span>
+      <pre data-lang="python">
+VAT = {"BE": "0.21", "NL": "0.21", "FR": "0.20"}
+
+class UnknownCountry(PipelineError): ...
+
+def vat_for(country: str) -&gt; Decimal:
+    try:
+        return Decimal(VAT[country.upper()])
+    except KeyError:
+        raise UnknownCountry(country) from None
+
+def net_to_gross(sale: Sale,
+                 rates: Rates) -&gt; Decimal:
+    rate = rates.eur(sale.day, sale.currency)
+    return (sale.amount * rate
+            * (1 + vat_for(sale.country)))
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>A rejected row is a <b>value</b>, not an exception: the job must report them all, not stop at the first. That one decision is what makes "never lose a row" achievable.</p></div>
+</section>
+
+<section class="slide" data-title="The shell">
+  <h2>The shell: everything that touches the world</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">pipeline.py – pure, given its dependencies</span>
+      <pre data-lang="python">
+def run(rows, rates, today) -&gt; Result:
+    totals: dict[str, Decimal] = defaultdict(Decimal)
+    rejected: list[Rejected] = []
+
+    for number, raw in enumerate(rows, 1):
+        match parse_row(number, raw):
+            case Sale() as sale if sale.day == today:
+                totals[sale.country] += net_to_gross(
+                    sale, rates)
+            case Rejected() as bad:
+                rejected.append(bad)
+
+    return Result(dict(totals), rejected)
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">cli.py – the composition root</span>
+      <pre data-lang="python">
+def main() -&gt; int:
+    logging.basicConfig(level=logging.INFO)
+    settings = Settings.from_env()
+
+    result = run(
+        rows=read_rows(settings.input_path),
+        rates=EcbRates(httpx.Client()),
+        today=date.today() - timedelta(days=1),
+    )
+
+    write_report(result.totals, settings.output)
+    log.info("%s rejected rows", len(result.rejected))
+    return 1 if result.rejected else 0
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p><code>main()</code> is the only function that knows about HTTP, the clock, the filesystem and the environment. Everything above it takes what it needs as an argument – so everything above it is testable with literals.</p></div>
+</section>
+
+<section class="slide" data-title="The payoff">
+  <h2>What it cost, and what it bought</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">the vendor switches to JSONL</span>
+      <pre data-lang="diff">
+ src/nightly/parsing.py   | +14
+ src/nightly/io.py        |  +1
+ tests/test_parsing.py    | +12
+--------------------------------
+ 3 files changed, nothing deleted
+ rules.py, pipeline.py, cli.py untouched
+</pre>
+      <pre data-lang="diff" style="margin-top:1cqw">
+ finance adds Spain:
+ src/nightly/rules.py     |  +1
+</pre>
+    </div>
+    <div>
+      <table class="xs">
+        <tr><th>Before</th><th>After</th></tr>
+        <tr><td>1 function, 23 lines</td><td>6 files, ~90 lines</td></tr>
+        <tr><td>0 tests possible</td><td>18 tests, 0.2 s, no network</td></tr>
+        <tr><td>new format = edit working code</td><td>new format = new function</td></tr>
+        <tr><td>bad rows disappear</td><td>bad rows are counted and reported</td></tr>
+        <tr><td>exit code always 0</td><td>exit code says what happened</td></tr>
+      </table>
+      <p style="margin-top:1.2cqw">Four times the lines is a real cost, paid once. The alternative is paying a smaller cost every single time something changes – and something changes every month.</p>
+      <div class="note"><p>Do not build this on day one. Build the 23-line script, ship it, and cut it along these lines the first time someone asks you to change it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: pipeline">
+  <div class="badge">Exercises, 20 min – and take home</div>
+  <h2>Build the nightly job</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li><code>parse_row</code>: a raw line to a <code>Sale</code> or a <code>Rejected</code> – never an exception, never a silent skip.</li>
+      <li><code>vat_for</code> and <code>net_to_gross</code>: the rules, with <code>Decimal</code> and a real error for an unknown country.</li>
+      <li><code>run</code>: fold the rows into totals plus rejects, taking <code>rates</code> and <code>today</code> as arguments.</li>
+      <li>Write <code>FixedRates</code> – four lines – and test the conversion with no network.</li>
+      <li>Add a <code>.jsonl</code> reader without editing <code>read_rows</code>.</li>
+      <li><b>Bonus.</b> Stream it: make the whole thing work on a file that does not fit in memory, and prove it with <code>itertools.islice</code>.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">09_pipeline.py</span>
+      <pre data-lang="python">
+result = run(RAW_ROWS, FixedRates("0.90"),
+             today=date(2026, 1, 5))
+
+assert result.totals == {"BE": Decimal("121.00")}
+assert [r.line for r in result.rejected] == [3, 5]
+assert result.rejected[0].reason == "bad date"
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">This is the whole section in one file: parsing at the edge, pure rules, injected dependencies, errors as data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Craft">
+  <div class="marker">Section 13</div>
+  <h1>Craft</h1>
+</section>
+
+<section class="slide" data-title="Craft">
+  <h2>PEP 8, in the six rules that matter</h2>
+  <div class="body cols wide-left">
+    <div>
+      <ul class="bare">
+        <li>Four spaces per indent level. Never tabs.</li>
+        <li>Lines under ~88 characters.</li>
+        <li><code>snake_case</code> for functions and variables, <code>PascalCase</code> for classes, <code>UPPER_SNAKE</code> for constants.</li>
+        <li>Two blank lines between top-level definitions, one between methods.</li>
+        <li>Spaces around operators and after commas – <code>x = f(a, b)</code>, not <code>x=f(a,b)</code>.</li>
+        <li>Imports at the top, one per line, grouped stdlib / third party / local.</li>
+      </ul>
+    </div>
+    <div class="plate sm">
+      <span class="cap">stop arguing, install the tool</span>
+      <pre data-lang="console">
+$ pip install ruff
+$ ruff format .     # rewrite to style
+$ ruff check .      # find problems
+$ ruff check --fix .
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Run it before every commit. Style reviews are a waste of a reviewer – let them spend attention on your logic instead.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Toolchain">
+  <h2>Four commands, run by a machine, not by a reviewer</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ ruff format .          # style, settled
+$ ruff check --fix .     # lint, mostly auto-fixed
+$ mypy src/              # the types you promised
+$ pytest -q              # the behaviour you promised
+</pre>
+      <pre data-lang="text" style="margin-top:1.1cqw">
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+</pre>
+      <pre data-lang="console" style="margin-top:1.1cqw">
+$ pre-commit install     # once per clone
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>The same four commands run locally, in <code>pre-commit</code> and in CI. Green on your laptop means green on the pull request.</li>
+        <li>Style stops being a matter of taste once a formatter exists. Spend review comments on logic, naming and the questions from section 7.</li>
+        <li>Add the tools on day one: <code>ruff format</code> on a two-year-old repository produces a diff nobody can review.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Review checklist">
+  <h2>What a reviewer is actually looking for</h2>
+  <div class="body cols">
+    <div>
+      <h3>In your code</h3>
+      <ul class="bare">
+        <li>Can I tell what this does from the names, without the diff's description?</li>
+        <li>What happens on the unhappy path – bad input, a timeout, an empty file?</li>
+        <li>Which part of this would I have to change when the requirements move? Is it one part?</li>
+        <li>Is anything here already in the standard library?</li>
+        <li>Could this function be tested without a network, a clock or a file?</li>
+      </ul>
+    </div>
+    <div>
+      <h3>In your pull request</h3>
+      <ul class="bare">
+        <li>One change per pull request. A refactor and a feature in one diff is unreviewable.</li>
+        <li>A description that says <em>why</em>, since the <em>what</em> is in the diff.</li>
+        <li>A test that fails without your change.</li>
+        <li>No commented-out code, no <code>print</code> debugging, no <code>TODO</code> without a name on it.</li>
+      </ul>
+      <div class="note" style="margin-top:1.1cqw"><p>Review your own diff first, in the web interface. You will find a third of the comments yourself, and the reviewer gets to spend their attention on the other two thirds.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Game: spot the bug">
+  <div class="badge">Game, 10 min</div>
+  <h2>Spot the bug</h2>
+  <div class="body cols wide-left">
+    <div>
+      <p class="lead">Eight snippets, each broken or right for the wrong reason. Four now, four at home.</p>
+      <ul class="bare">
+        <li>Teams of two. For each snippet: what happens when you run it, and what did the author mean?</li>
+        <li>Two points for the diagnosis, one for the fix. Guessing costs nothing, so guess.</li>
+        <li>Every bug in the set is one that a real person shipped.</li>
+      </ul>
+      <p><code>exercises/python/spot_the_bug.md</code></p>
+    </div>
+    <div class="plate sm">
+      <span class="cap">warm-up – what does this print?</span>
+      <pre data-lang="python">
+x = 0
+y = 1
+total = 0
+
+while total &lt; 50:
+    print(total)
+    x = y
+    y = total
+    total = x + y
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recap">
+  <h2>What you can do now</h2>
+  <div class="body cols">
+    <div>
+      <ul class="bare">
+        <li>Use the four containers deliberately, knowing what each operation costs.</li>
+        <li>Split a script into pure functions and push the I/O to the edges.</li>
+        <li>Argue about design with words that mean something: DRY, KISS, YAGNI, SOLID.</li>
+        <li>Recognise both failure modes: the 200-line function, and the framework nobody ordered.</li>
+        <li>Inject a dependency, write a four-line fake, test the thing you were afraid to change.</li>
+        <li>Set up a project with a venv, pinned dependencies, <code>ruff</code>, <code>mypy</code> and <code>pytest</code>.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Where to go next</h3>
+      <ul class="bare">
+        <li><b>docs.python.org/3/tutorial</b> – the official tutorial, still the best one.</li>
+        <li><b>Fluent Python</b>, Ramalho – when you want to know <em>why</em>.</li>
+        <li><b>A Philosophy of Software Design</b>, Ousterhout – 190 pages on section 7's question.</li>
+        <li><b>Architecture Patterns with Python</b>, Percival &amp; Gregory – the case study, taken all the way.</li>
+      </ul>
+      <div class="note">
+        <p>This week: take something you already wrote, and cut it where the reasons to change are.</p>
+        <p>Next up: Linux, the machine all of this runs on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main></div>
+<script src="deck.js"></script>

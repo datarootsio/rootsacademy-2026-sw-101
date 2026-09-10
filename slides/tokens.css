@@ -1,0 +1,22 @@
+/* Design tokens shared by the hub page and the decks. */
+
+:root {
+  --paper:    #e3e1da;
+  --panel:    #f2f1ec;
+  --plate:    #1b222a;
+  --plate-2:  #232b35;
+  --ink:      #1b222a;
+  --ink-soft: #5d6670;
+  --rule:     #b9b7ae;
+
+  --py:  #1e4fd8;
+  --ok:  #4a8c3f;
+  --git: #b93b2b;
+  --nix: #96660e;
+
+  --track:    var(--py);
+  --track-on: #ffffff;
+
+  --sans: Archivo, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}

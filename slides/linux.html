@@ -1,0 +1,1033 @@
+<title>Linux 101</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="deck.css">
+<script>window.DECK = { track: "nix", code: "NIX", title: "Linux 101" };</script>
+
+<div id="stage"><main id="deck">
+
+<section class="slide opener" data-title="Linux">
+  <h1>Linux</h1>
+  <p class="sub">The operating system your code will actually run on, and the terminal you will spend your career in.</p>
+  <div class="plan">
+    <div>What an OS does</div>
+    <div>Terminal 101</div>
+    <div>Bash scripting</div>
+    <div>SSH</div>
+  </div>
+</section>
+
+<section class="slide part" data-title="The operating system">
+  <div class="marker">Section 1</div>
+  <h1>The operating system</h1>
+</section>
+
+<section class="slide" data-title="The operating system">
+  <h2>What an operating system is for</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p>Your program wants to read a file. It does not know what a disk is, and it must not read anyone else's files. The OS sits in between.</p>
+      <ul class="bare">
+        <li><b>Abstraction</b> – one <code>open()</code> call for an SSD, a network share or a USB stick.</li>
+        <li><b>Isolation</b> – your crash does not take down the machine.</li>
+        <li><b>Scheduling</b> – 400 processes, 8 cores, everyone takes a turn.</li>
+      </ul>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="text">
+┌────────────────────────────────────┐
+│  your Python script                │
+├────────────────────────────────────┤
+│  shell and libraries (bash, libc)  │
+├────────────────────────────────────┤
+│  system calls: open read write     │
+├────────────────────────────────────┤
+│  kernel: processes, memory, files  │
+├────────────────────────────────────┤
+│  hardware                          │
+└────────────────────────────────────┘
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The operating system">
+  <h2>Fifty-five years in nine lines</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><td><b>1969</b></td><td>Ken Thompson and Dennis Ritchie build <b>Unix</b> at Bell Labs. Small tools, plain text, one filesystem tree.</td></tr>
+      <tr><td><b>1973</b></td><td>Unix is rewritten in <b>C</b> – so it can be moved to other machines. This is why it survived.</td></tr>
+      <tr><td><b>1983</b></td><td>Richard Stallman starts <b>GNU</b>: a free Unix. The tools get written, the kernel does not.</td></tr>
+      <tr><td><b>1991</b></td><td>Linus Torvalds, a student in Helsinki, posts a hobby kernel. "Just a hobby, won't be big."</td></tr>
+      <tr><td><b>1992</b></td><td>GNU tools + Linux kernel = a complete free operating system. Licensed GPL, so improvements come back.</td></tr>
+      <tr><td><b>1990s</b></td><td><b>Distributions</b> appear – Debian, Red Hat, Slackware. A kernel, the tools, a package manager, defaults.</td></tr>
+      <tr><td><b>2003</b></td><td>Linux takes over the server room. Cheaper than Unix, better than the alternatives.</td></tr>
+      <tr><td><b>2008</b></td><td><b>Android</b> ships on a Linux kernel. It becomes the most-used OS on earth.</td></tr>
+      <tr><td><b>2013</b></td><td><b>Docker</b> makes Linux the unit of deployment. Every container image is a Linux filesystem.</td></tr>
+    </table>
+    <div class="note"><p><b>POSIX</b> is the standard that keeps them compatible. macOS is certified Unix, so nearly everything today works identically on your Mac and on a cloud server. On Windows, use <b>WSL2</b> – a real Linux kernel.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="The operating system">
+  <h2>Why this is not history homework</h2>
+  <div class="body cols">
+    <div>
+      <ul class="bare">
+        <li>Every cloud VM, container and CI runner you touch is Linux.</li>
+        <li>Your notebook runs on someone's Linux box. When it fails at 2am, the only interface is a shell.</li>
+        <li>A <code>Dockerfile</code> is a list of shell commands. So is most of a CI pipeline.</li>
+        <li>Debugging a deployment means reading logs, checking permissions and following processes – all of it in the terminal.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="plate sm">
+        <span class="cap">an ordinary Tuesday</span>
+        <pre data-lang="console">
+$ ssh data@prod-etl-01
+$ cd /var/log/etl
+$ tail -f pipeline.log
+$ grep -c ERROR pipeline.log
+147
+$ df -h /data
+$ systemctl status etl.timer
+</pre>
+      </div>
+      <p style="margin-top:1.2cqw">No IDE, no mouse, 400ms of latency. This is a normal amount of terminal for a data engineer.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Terminal 101">
+  <div class="marker">Section 2</div>
+  <h1>Terminal 101</h1>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Terminal, shell, prompt – three different things</h2>
+  <div class="body cols">
+    <div>
+      <ul class="bare">
+        <li><b>Terminal</b> – the window. Terminal.app, iTerm, Windows Terminal, the VS Code panel.</li>
+        <li><b>Shell</b> – the program inside it that reads your commands. <code>bash</code>, <code>zsh</code>, <code>fish</code>. macOS defaults to <code>zsh</code>; servers almost always give you <code>bash</code>.</li>
+        <li><b>Prompt</b> – the text the shell prints when it is ready for you.</li>
+      </ul>
+      <div class="note"><p><code>echo $SHELL</code> tells you which shell you are in. Everything today works in both bash and zsh.</p></div>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="text">
+charlotte@laptop:~/projects/etl$
+└───┬───┘ └──┬──┘ └─────┬─────┘└┬┘
+    user   machine    where     you are
+                       you are  not root
+                       ($ vs #)
+</pre>
+      <p style="margin-top:1.1cqw;font-size:1.4cqw">In these slides the prompt is shown as a bare <code>$</code>. Do not type it – it is the shell's, not yours.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Every command has the same shape</h2>
+  <div class="body">
+    <div class="plate">
+      <pre data-lang="text">
+$ ls  -l  -a  --human-readable  /var/log
+  │   └────────┬─────────────┘  └───┬──┘
+  │        options/flags        arguments
+  └── the program
+
+$ ls -lah /var/log            short flags combine
+</pre>
+    </div>
+    <div class="cols" style="margin-top:1.8cqw">
+      <div>
+        <ul class="bare">
+          <li>Single dash, single letter: <code>-l</code>. Double dash, whole word: <code>--all</code>.</li>
+          <li>Case matters. <code>-r</code> and <code>-R</code> are usually different things.</li>
+          <li>Spaces separate arguments – which is why <code>My File.txt</code> needs quotes.</li>
+        </ul>
+      </div>
+      <div class="plate sm">
+        <span class="cap">when you do not know a flag</span>
+        <pre data-lang="console">
+$ ls --help
+$ man ls           # q to quit, / to search
+$ type ls
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>One tree, from <code>/</code></h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="text">
+/               the root of everything
+├── bin/        essential programs: ls, cp, bash
+├── etc/        system configuration, all text
+├── home/       one directory per user
+│   └── charlotte/     = ~
+├── var/        things that change
+│   └── log/           logs live here
+├── tmp/        wiped on reboot, anyone can write
+├── usr/        installed software
+│   ├── bin/           most of your programs
+│   └── local/         things you installed
+├── opt/        third-party bundles
+├── dev/        devices as files (/dev/null)
+└── proc/       the kernel, as files
+</pre>
+    </div>
+    <div>
+      <p>No drive letters. A USB stick, a network share and a second disk all appear as directories somewhere in this one tree.</p>
+      <ul class="bare">
+        <li><code>/etc</code> is where you go when something is configured wrong.</li>
+        <li><code>/var/log</code> is where you go when something is broken.</li>
+        <li><code>/dev/null</code> discards anything written to it. You will use it to silence output.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Moving around</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ pwd
+/home/charlotte/projects
+
+$ ls                # names only
+$ ls -l             # long: perms, size, date
+$ ls -la            # include dotfiles
+$ ls -lah           # human-readable sizes
+$ ls -lt            # newest first
+
+$ cd etl            # relative: into ./etl
+$ cd /var/log       # absolute: from the root
+$ cd ..             # up one
+$ cd                # home
+$ cd -              # back where I was
+</pre>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><td><code>.</code></td><td>here</td></tr>
+        <tr><td><code>..</code></td><td>one level up</td></tr>
+        <tr><td><code>~</code></td><td>your home directory</td></tr>
+        <tr><td><code>/</code></td><td>the root of the tree</td></tr>
+        <tr><td><code>-</code></td><td>the previous directory</td></tr>
+      </table>
+      <div class="note" style="margin-top:1.3cqw">
+        <p><b>Press <kbd>Tab</kbd>.</b> Always. It completes paths and commands, and it will not complete something that does not exist – so it is also a spell checker. Twice shows you the options.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Reading files without opening an editor</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ cat notes.txt          # whole file, at once
+$ less pipeline.log      # scroll; q quits
+$ head -20 data.csv      # first 20 lines
+$ tail -20 data.csv      # last 20
+$ tail -f pipeline.log   # follow as it grows
+$ wc -l data.csv         # count lines
+$ file mystery.bin       # what is this?
+$ stat data.csv          # size, dates, perms
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><code>head</code> on an unfamiliar file, every time. <code>cat</code> on a 2 GB CSV locks up your terminal.</li>
+        <li><code>tail -f</code> is how you watch a job run. <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop watching.</li>
+        <li>In <code>less</code>: <kbd>/</kbd> searches, <kbd>n</kbd> next match, <kbd>G</kbd> jumps to the end, <kbd>q</kbd> quits.</li>
+      </ul>
+      <div class="note"><p><code>cat file | grep x</code> works, but <code>grep x file</code> is what you meant.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Creating, copying, moving, deleting</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ mkdir reports
+$ mkdir -p data/raw/2026     # whole path
+$ touch report.md            # empty file
+
+$ cp report.md backup.md
+$ cp -r data/ data-backup/   # directories
+$ mv report.md docs/         # move
+$ mv report.md notes.md      # rename
+
+$ rm backup.md
+$ rm -r data-backup/         # directory
+$ rmdir empty-dir/           # only if empty
+</pre>
+    </div>
+    <div>
+      <div class="trap">
+        <p><b>There is no recycle bin.</b> <code>rm</code> is immediate and permanent. No confirmation, no undo, no reflog.</p>
+        <div style="font-family:var(--mono);font-size:1.25cqw;margin-top:0.5cqw">
+rm -rf /            <span class="dim"># the meme</span><br>
+rm -rf $DIR/*       <span class="dim"># the real</span><br>
+&nbsp;                   <span class="dim"># danger: if</span><br>
+&nbsp;                   <span class="dim"># DIR is unset</span><br>
+&nbsp;                   <span class="dim"># this is rm -rf /*</span>
+        </div>
+      </div>
+      <p style="margin-top:1.1cqw">Habits: <code>ls</code> the pattern before you <code>rm</code> it. Quote your variables. Never <code>rm -rf</code> a path you built by string concatenation without checking it first.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Finding things: <code>find</code> and <code>grep</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">find – by name, size, age</span>
+      <pre data-lang="console">
+$ find . -name "*.csv"
+$ find . -iname "*README*"      # any case
+$ find . -type d -name "test*"  # dirs only
+$ find . -size +100M            # big files
+$ find . -mtime -1              # last 24h
+$ find . -name "*.pyc" -delete
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">grep – by content</span>
+      <pre data-lang="console">
+$ grep ERROR pipeline.log
+$ grep -i error pipeline.log    # any case
+$ grep -n ERROR pipeline.log    # line numbers
+$ grep -c ERROR pipeline.log    # just a count
+$ grep -v DEBUG pipeline.log    # invert
+$ grep -r "VAT_RATE" src/       # recursive
+$ grep -A2 -B2 ERROR log        # context
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p><code>find</code> looks at names, <code>grep</code> looks inside files. Quote your patterns – <code>*.csv</code> unquoted gets expanded by the shell before <code>find</code> ever sees it.</p></div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Pipes: the idea the whole system is built on</h2>
+  <div class="body">
+    <p class="lead">Every program reads a stream of text and writes a stream of text. So any program's output can be any other program's input.</p>
+    <div class="plate" style="margin-top:1.4cqw">
+      <pre data-lang="console">
+$ grep ERROR pipeline.log | cut -d' ' -f4 | sort | uniq -c | sort -rn | head -5
+</pre>
+    </div>
+    <div class="plate sm" style="margin-top:1.2cqw">
+      <pre data-lang="text">
+  only errors  →  the module  →  group  →  count  →  biggest  →  top 5
+</pre>
+    </div>
+    <div class="out" style="margin-top:1.2cqw"><span class="cap">output</span> 147 invoice.py
+  31 loader.py
+   9 vat.py</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Redirection: sending streams somewhere else</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ echo "hi" &gt; out.txt       # write (replaces!)
+$ echo "again" &gt;&gt; out.txt     # append
+$ sort &lt; names.txt            # read from file
+
+$ python3 job.py &gt; out.log 2&gt; err.log
+$ python3 job.py &gt; all.log 2&gt;&amp;1
+$ python3 job.py 2&gt; /dev/null  # hide errors
+$ python3 job.py | tee run.log  # screen + file
+</pre>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><th>Stream</th><th>Number</th><th>Is</th></tr>
+        <tr><td>stdin</td><td>0</td><td>what comes in</td></tr>
+        <tr><td>stdout</td><td>1</td><td>the results</td></tr>
+        <tr><td>stderr</td><td>2</td><td>the complaints</td></tr>
+      </table>
+      <p style="margin-top:1.2cqw">They are separate on purpose: <code>| grep</code> filters the results without swallowing the error messages.</p>
+      <div class="trap"><p><b><code>&gt;</code> truncates the file before the command runs.</b> <code>sort file.txt &gt; file.txt</code> gives you an empty file.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>The text tools worth memorising</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ wc -l data.csv           # count lines
+$ sort names.txt
+$ sort -rn sizes.txt       # reverse numeric
+$ uniq -c                  # count runs
+$ cut -d, -f2,5 data.csv   # pick columns
+$ tr 'a-z' 'A-Z'           # translate chars
+$ sed 's/old/new/g' f.txt  # substitute
+$ head -1 data.csv         # the header
+$ awk -F, '{print $2}' f   # field 2
+$ xargs rm                 # args from stdin
+</pre>
+    </div>
+    <div>
+      <div class="plate sm">
+        <span class="cap">worked example</span>
+        <pre data-lang="console">
+# most common values in column 3
+$ tail -n +2 sales.csv \
+  | cut -d, -f3 \
+  | sort | uniq -c | sort -rn \
+  | head -3
+</pre>
+      </div>
+      <ul class="bare" style="margin-top:1.2cqw">
+        <li><code>uniq</code> only removes <b>adjacent</b> duplicates. It is nearly always <code>sort | uniq</code>.</li>
+        <li>A backslash at the end of a line continues the command. Use it on long pipelines.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Permissions: who may do what</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ ls -l
+-rw-r--r--  1 charlotte staff  2.1K report.md
+drwxr-xr-x  4 charlotte staff  128B data/
+-rwxr-xr-x  1 charlotte staff  412B deploy.sh
+</pre>
+      <pre data-lang="text" style="margin-top:0.9cqw">
+ -  rw-  r--  r--
+ │   │    │    └── other: read
+ │   │    └─────── group: read
+ │   └──────────── user:  read + write
+ └── type: - file, d directory, l link
+</pre>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><th></th><th>File</th><th>Directory</th></tr>
+        <tr><td><code>r</code> 4</td><td>read contents</td><td>list names</td></tr>
+        <tr><td><code>w</code> 2</td><td>modify</td><td>add / remove entries</td></tr>
+        <tr><td><code>x</code> 1</td><td>run it</td><td>enter it</td></tr>
+      </table>
+      <div class="note" style="margin-top:1.2cqw">
+        <p>On a directory, <code>x</code> means "may pass through". A directory with <code>r</code> but no <code>x</code> lets you list the names and read nothing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2><code>chmod</code>, and the number everyone remembers</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ chmod +x deploy.sh        # make runnable
+$ chmod u+w,go-w notes.md   # symbolic
+$ chmod 755 deploy.sh       # numeric
+$ chmod 600 ~/.ssh/id_ed25519
+$ chmod -R 755 public/      # recursive
+
+$ chown charlotte:staff file   # needs sudo
+</pre>
+      <table class="xs" style="margin-top:1cqw">
+        <tr><td><code>755</code></td><td>rwxr-xr-x</td><td>program, or a directory</td></tr>
+        <tr><td><code>644</code></td><td>rw-r--r--</td><td>an ordinary file</td></tr>
+        <tr><td><code>600</code></td><td>rw-------</td><td>a secret. SSH keys</td></tr>
+        <tr><td><code>777</code></td><td>rwxrwxrwx</td><td>never the right answer</td></tr>
+      </table>
+    </div>
+    <div>
+      <p>Add the digits: read 4 + write 2 + execute 1. Three digits, for user, group and other.</p>
+      <div class="trap">
+        <p><b><code>chmod 777</code> is how "Permission denied" becomes "security incident".</b> It is the shell equivalent of <code>except: pass</code> – the error goes away and the problem remains.</p>
+        <p>Work out <em>which</em> permission is missing instead.</p>
+      </div>
+      <p style="margin-top:1.1cqw"><code>sudo</code> runs one command as root. Read the command twice before you press enter.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Processes: what is running, and stopping it</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ ps aux | grep python
+$ top          # live; q quits
+$ htop         # nicer, if installed
+
+$ python3 long_job.py &amp;      # background
+[1] 48213
+$ jobs
+$ fg %1                      # bring it back
+$ kill 48213                 # ask it to stop
+$ kill -9 48213              # make it stop
+$ pkill -f long_job.py       # by name
+
+$ nohup python3 job.py &amp;     # survives logout
+</pre>
+    </div>
+    <div>
+      <p>Every running program is a process with a PID and a parent. <code>kill</code> sends it a signal; the default asks politely and lets it clean up.</p>
+      <div class="note">
+        <p><b>Keyboard, in order of usefulness:</b></p>
+        <table class="xs" style="margin-top:0.5cqw">
+          <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>stop this command</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>end of input / log out</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>R</kbd></td><td>search your history</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>E</kbd></td><td>start / end of line</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>clear the screen</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>suspend, then <code>fg</code></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Terminal 101">
+  <h2>Environment variables and <code>PATH</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ echo $HOME
+/home/charlotte
+$ echo $PATH
+/usr/local/bin:/usr/bin:/bin
+
+$ export API_TOKEN="abc123"
+$ python3 -c \
+  "import os; print(os.environ['API_TOKEN'])"
+
+$ env | sort | head
+$ which python3
+/home/charlotte/.venv/bin/python3
+</pre>
+    </div>
+    <div>
+      <p><code>PATH</code> is a list of directories, checked left to right, to find the program you typed. <code>which</code> tells you which one won – that is how you know your virtual environment is active.</p>
+      <div class="note">
+        <p><code>export</code> lasts for this shell session only. To make it permanent, add the line to <code>~/.zshrc</code> (macOS) or <code>~/.bashrc</code> (Linux), then <code>source</code> it.</p>
+      </div>
+      <div class="trap"><p><b>Never put a secret in <code>.bashrc</code> or in your shell history.</b> Use a <code>.env</code> file that is in <code>.gitignore</code>, or your platform's secret store.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Game: scavenger hunt">
+  <div class="badge">Game, 10 min</div>
+  <h2>Terminal scavenger hunt</h2>
+  <div class="body cols wide-left">
+    <div>
+      <p class="lead">A generated directory tree hides twelve answers, one command each. Get as far as you can in ten minutes.</p>
+      <ul class="bare">
+        <li>Points for the answer, bonus points for the shortest correct command.</li>
+        <li>No editors, no Finder, no file manager. Terminal only.</li>
+        <li>Some answers are in file contents, some in names, some in permissions, some in timestamps.</li>
+      </ul>
+      <p><code>exercises/linux/terminal-scavenger-hunt.md</code></p>
+    </div>
+    <div class="plate sm">
+      <span class="cap">setup</span>
+      <pre data-lang="console">
+$ cd exercises/linux
+$ ./setup-playground.sh
+Playground ready at ~/linux-playground
+
+$ cd ~/linux-playground
+$ cat HUNT.md
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Sample questions: which file is largest, which was modified most recently, how many lines mention <code>timeout</code>, which script is executable but empty, what is hidden in the deepest directory.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Bash scripting">
+  <div class="marker">Section 3</div>
+  <h1>Bash scripting 101</h1>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>A script is the commands you typed</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">setup.sh</span>
+      <pre data-lang="bash">
+#!/usr/bin/env bash
+# Set up a fresh project directory.
+set -euo pipefail
+
+mkdir -p src tests data
+python3 -m venv .venv
+echo ".venv/" &gt; .gitignore
+git init
+</pre>
+    </div>
+    <div>
+      <div class="plate sm">
+        <pre data-lang="console">
+$ chmod +x setup.sh
+$ ./setup.sh
+</pre>
+      </div>
+      <ul class="bare" style="margin-top:1.2cqw">
+        <li>The <b>shebang</b> on line 1 says which interpreter to use. <code>env bash</code> finds it wherever it lives.</li>
+        <li><code>chmod +x</code> once, then <code>./setup.sh</code>. The <code>./</code> is required: this directory is not on your <code>PATH</code>.</li>
+        <li>Comments start with <code>#</code>. Line 1 only looks like one.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>Variables, and the quoting rule</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="bash">
+name="Charlotte"          # no spaces around =
+greeting="Hello, $name"
+today=$(date +%F)         # command output
+count=$((2 + 3))          # arithmetic
+
+echo "$greeting, $today"
+
+readonly MAX_RETRIES=3
+</pre>
+    </div>
+    <div>
+      <div class="trap">
+        <p><b>Always quote your variables.</b></p>
+        <div style="font-family:var(--mono);font-size:1.25cqw;margin-top:0.5cqw">
+file="My Report.csv"<br><br>
+rm $file<br>
+<span class="dim"># deletes "My" and "Report.csv"</span><br><br>
+rm "$file"<br>
+<span class="dim"># deletes the file you meant</span>
+        </div>
+      </div>
+      <p style="margin-top:1.1cqw"><code>"double quotes"</code> expand variables. <code>'single quotes'</code> do not. Unquoted splits on spaces and expands <code>*</code>.</p>
+      <p class="dim">The single most common bug in shell scripts, by a wide margin.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>Arguments and exit codes</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">backup.sh</span>
+      <pre data-lang="bash">
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+    echo "usage: $0 &lt;directory&gt;" &gt;&amp;2
+    exit 1
+fi
+
+src="$1"
+target="${2:-/tmp/backup}"
+
+tar -czf "$target/$(date +%F).tgz" "$src"
+echo "Backed up $src to $target"
+</pre>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><td><code>$0</code></td><td>the script's own name</td></tr>
+        <tr><td><code>$1</code>, <code>$2</code></td><td>first, second argument</td></tr>
+        <tr><td><code>$#</code></td><td>how many arguments</td></tr>
+        <tr><td><code>"$@"</code></td><td>all of them, safely quoted</td></tr>
+        <tr><td><code>$?</code></td><td>exit code of the last command</td></tr>
+        <tr><td><code>${2:-x}</code></td><td><code>$2</code>, or <code>x</code> if unset</td></tr>
+      </table>
+      <div class="note" style="margin-top:1.2cqw">
+        <p><b>0 means success</b>, anything else is a failure. That is backwards from Python's truthiness and it catches everyone once.</p>
+        <p>Errors go to stderr (<code>&gt;&amp;2</code>) and failures <code>exit 1</code>, so the caller – a pipeline, a cron job, CI – can tell.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>Conditionals</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="bash">
+if [[ -f "$file" ]]; then
+    echo "file exists"
+elif [[ -d "$file" ]]; then
+    echo "it is a directory"
+else
+    echo "nothing there"
+fi
+
+if [[ "$env" == "prod" ]]; then ... fi
+if [[ $count -gt 10 ]]; then ... fi
+if grep -q ERROR log; then ... fi
+
+command -v jq &gt;/dev/null || {
+    echo "jq is required" &gt;&amp;2; exit 1
+}
+</pre>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><td><code>-f</code> / <code>-d</code> / <code>-e</code></td><td>is a file / directory / exists</td></tr>
+        <tr><td><code>-z</code> / <code>-n</code></td><td>string is empty / not empty</td></tr>
+        <tr><td><code>==</code> / <code>!=</code></td><td>string comparison</td></tr>
+        <tr><td><code>-eq -ne -gt -lt</code></td><td>number comparison</td></tr>
+      </table>
+      <div class="note" style="margin-top:1.2cqw">
+        <p>Use <code>[[ ]]</code>, not <code>[ ]</code>. It handles empty variables and spaces without surprises.</p>
+        <p>An <code>if</code> can test any command directly – it is checking the exit code, not a boolean.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>Loops, functions and <code>case</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="bash">
+for file in data/*.csv; do
+    echo "Processing $file"
+    python3 load.py "$file"
+done
+
+for i in {1..5}; do echo "$i"; done
+
+while read -r line; do
+    echo "&gt; $line"
+done &lt; names.txt
+
+until curl -sf "$url"; do sleep 2; done
+</pre>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="bash">
+log() {
+    echo "[$(date +%T)] $*" &gt;&amp;2
+}
+
+log "starting"
+
+case "${1:-}" in
+    start)  log "starting" ;;
+    stop)   log "stopping" ;;
+    *)      echo "usage: $0 start|stop" &gt;&amp;2
+            exit 1 ;;
+esac
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p><code>for f in data/*.csv</code> loops over filenames safely, spaces included. Never loop over <code>$(ls)</code>.</p></div>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>The three lines at the top of every script</h2>
+  <div class="body cols wide-right">
+    <div>
+      <div class="plate lg">
+        <pre data-lang="bash">
+set -euo pipefail
+</pre>
+      </div>
+      <table class="sm" style="margin-top:1.4cqw">
+        <tr><td><code>-e</code></td><td>stop at the first failing command</td></tr>
+        <tr><td><code>-u</code></td><td>a typo in a variable name is an error, not an empty string</td></tr>
+        <tr><td><code>-o pipefail</code></td><td>a pipeline fails if any stage fails, not just the last</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="plate sm">
+        <span class="cap">without it</span>
+        <pre data-lang="bash">
+#!/usr/bin/env bash
+cd "$BUILD_DIR"     # typo: unset
+rm -rf *            # in your home dir
+</pre>
+      </div>
+      <div class="plate sm" style="margin-top:1.2cqw">
+        <span class="cap">with it</span>
+        <pre data-lang="console">
+$ ./build.sh
+./build.sh: line 3: BUILD_DIR: unbound variable
+$ echo $?
+1
+</pre>
+      </div>
+      <p style="margin-top:1.2cqw">Bash's defaults are from 1989 and assume you are typing interactively. In a script they will hurt you. This line is not optional.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Bash scripting">
+  <h2>When to stop writing bash</h2>
+  <div class="body cols">
+    <div>
+      <h3>Bash is right for</h3>
+      <ul class="bare">
+        <li>Gluing commands together in order.</li>
+        <li>Moving files, setting up directories, running other programs.</li>
+        <li>Anything under about 50 lines.</li>
+        <li>Something that must run on any machine with no dependencies.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Switch to Python when</h3>
+      <ul class="bare">
+        <li>You need arithmetic, dates or floating point.</li>
+        <li>You are parsing JSON, CSV or XML.</li>
+        <li>You want data structures, functions with return values, or tests.</li>
+        <li>You have written a second nested <code>if</code> inside a loop.</li>
+        <li>You cannot tell what your own script does.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.4cqw"><p>Run <code>shellcheck</code> on every script you keep. It finds the unquoted variables and the wrong test operators before they find you: <code>brew install shellcheck</code>.</p></div>
+</section>
+
+<section class="slide task" data-title="Exercises: bash">
+  <div class="badge">Take home</div>
+  <h2>Bash scripting</h2>
+  <div class="body cols wide-left">
+    <ol class="tasks">
+      <li><code>greet.sh NAME</code> – greets by name, or prints a usage line and exits 1 if no name is given.</li>
+      <li><code>count.sh DIR</code> – how many files, directories and lines of Python it contains.</li>
+      <li><code>backup.sh SRC [DEST]</code> – makes a dated <code>.tgz</code> of <code>SRC</code>, defaulting <code>DEST</code> to <code>/tmp/backups</code>. Refuse if <code>SRC</code> does not exist.</li>
+      <li><code>newproject.sh NAME</code> – creates <code>src/</code>, <code>tests/</code>, a <code>.gitignore</code>, a virtual environment, a README and an initial commit.</li>
+      <li><b>Bonus.</b> <code>logstats.sh LOGFILE</code> – top 5 errors with counts, and the busiest hour. Pipes only.</li>
+    </ol>
+    <div class="plate sm">
+      <span class="cap">exercises/linux/bash-exercises.md</span>
+      <pre data-lang="console">
+$ cd exercises/linux/bash
+$ ./run-tests.sh greet
+✓ greets by name
+✗ exits 1 with no argument
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Start every file with the shebang and <code>set -euo pipefail</code>. Run <code>shellcheck</code> before you call it done.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="SSH">
+  <div class="marker">Section 4</div>
+  <h1>SSH</h1>
+</section>
+
+<section class="slide" data-title="SSH">
+  <h2>A shell on someone else's machine</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p>SSH gives you an encrypted terminal session on a remote host. Same commands, same shell, different computer.</p>
+      <p>You authenticate with a <b>key pair</b>, not a password:</p>
+      <ul class="bare">
+        <li>The <b>private</b> key stays on your laptop. It never moves, ever.</li>
+        <li>The <b>public</b> key is copied to the server. It is safe to share.</li>
+        <li>The server sends a challenge only the private key can answer.</li>
+      </ul>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+$ ssh charlotte@prod-etl-01
+charlotte@prod-etl-01:~$ hostname
+prod-etl-01
+charlotte@prod-etl-01:~$ exit
+$
+
+$ ssh -p 2222 charlotte@host      # other port
+$ ssh charlotte@host "df -h"      # one command
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Nothing is transmitted that would let an eavesdropper log in as you – which is why passwords are switched off on any serious server.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="SSH">
+  <h2>Making and installing a key</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ ssh-keygen -t ed25519 -C "charlotte@laptop"
+Enter passphrase: ********
+
+$ ls -l ~/.ssh
+-rw-------  id_ed25519        ← private. 600
+-rw-r--r--  id_ed25519.pub    ← public
+
+$ ssh-copy-id charlotte@host
+$ ssh charlotte@host           # no password
+
+$ ssh-add ~/.ssh/id_ed25519   # cache the pass
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>Use <code>ed25519</code>. Short, fast, modern.</li>
+        <li><b>Set a passphrase.</b> It is what stops a stolen laptop becoming a stolen server. <code>ssh-add</code> means you type it once per session.</li>
+        <li>On the server, public keys live in <code>~/.ssh/authorized_keys</code> – one per line.</li>
+      </ul>
+      <div class="trap">
+        <p><b>Permissions are enforced.</b> SSH refuses a private key others can read: <code>chmod 600</code> the key, <code>700</code> the directory.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="SSH">
+  <h2>Stop typing the long version: <code>~/.ssh/config</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">~/.ssh/config</span>
+      <pre data-lang="text">
+Host etl
+    HostName prod-etl-01.example.com
+    User charlotte
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+Host github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+</pre>
+      <pre data-lang="console" style="margin-top:0.9cqw">
+$ ssh etl
+</pre>
+    </div>
+    <div>
+      <div class="plate sm">
+        <span class="cap">moving files</span>
+        <pre data-lang="console">
+$ scp report.csv etl:/data/incoming/
+$ scp etl:/var/log/etl.log ./
+
+$ rsync -avz --progress data/ etl:/data/
+</pre>
+      </div>
+      <ul class="bare" style="margin-top:1.2cqw">
+        <li><code>scp</code> for one file. <code>rsync</code> for a directory – it only sends what changed and can resume.</li>
+        <li>A trailing slash on the rsync source means "the contents of", not "the directory". This matters.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="SSH">
+  <h2>Where this connects back to Git</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ ssh-keygen -t ed25519 -C "charlotte@laptop"
+$ cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3Nza... charlotte@laptop
+
+# paste that into
+# GitHub → Settings → SSH and GPG keys
+
+$ ssh -T git@github.com
+Hi charlotte! You've successfully
+authenticated.
+
+$ git clone git@github.com:roots/academy.git
+</pre>
+    </div>
+    <div>
+      <p class="lead">This is why <code>git clone git@github.com:…</code> works without a password.</p>
+      <ul class="bare">
+        <li>The <code>git@</code> address is SSH. The <code>https://</code> address needs a token instead.</li>
+        <li>One key per machine, not per repository.</li>
+        <li>Lost the laptop? Delete that public key in GitHub settings and the access is gone.</li>
+      </ul>
+      <div class="note"><p><code>ssh -T git@github.com</code> is the fastest way to check whether your key is set up. Do it now.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Recap">
+  <div class="marker">Section 5</div>
+  <h1>Recap</h1>
+</section>
+
+<section class="slide" data-title="Recap">
+  <h2>The whole day, in one page</h2>
+  <div class="body cols three">
+    <div>
+      <h3>Git</h3>
+      <ul class="bare">
+        <li>Commits are snapshots; branches are pointers.</li>
+        <li><code>status</code> and <code>diff</code> before every commit.</li>
+        <li>Branch, push, pull request, review, merge.</li>
+        <li>Conflicts are questions, not damage.</li>
+        <li>If it was committed, the reflog can find it.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Python</h3>
+      <ul class="bare">
+        <li>Four containers, chosen on purpose.</li>
+        <li>Functions take arguments and return values.</li>
+        <li>Mutable defaults and shared references bite.</li>
+        <li>Raise early, catch specifically.</li>
+        <li>One virtual environment per project.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Linux</h3>
+      <ul class="bare">
+        <li>One tree from <code>/</code>, text streams between programs.</li>
+        <li>Pipes and redirection compose small tools.</li>
+        <li><code>rm</code> has no undo. <code>777</code> is never the fix.</li>
+        <li><code>set -euo pipefail</code> on every script.</li>
+        <li>Private key stays home; public key travels.</li>
+      </ul>
+    </div>
+  
+  </div>
+  <div class="note" style="margin-top:1.6cqw">
+    <p>Three cheat sheets are in <code>cheatsheets/</code>. Print them. The exercises stay in the repository – push your solutions to your personal branch and open a pull request.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Recap">
+  <h2>The habit that matters more than any of it</h2>
+  <div class="body">
+    <p class="lead">When something breaks, read the error message. All of it. Out loud if necessary.</p>
+    <div class="cols" style="margin-top:1.8cqw">
+      <ul class="bare">
+        <li>Python tells you the file, the line and the type of problem. Start at the bottom.</li>
+        <li>Git tells you what it refused to do and usually suggests the command that fixes it.</li>
+        <li>The shell tells you which file it could not find or write.</li>
+      </ul>
+      <ul class="bare">
+        <li>Change one thing at a time, then look again.</li>
+        <li>Say what you expected and what happened. That sentence solves half of them by itself.</li>
+        <li>Then ask a colleague. Fifteen minutes stuck is learning; ninety is waste.</li>
+      </ul>
+    </div>
+    <div class="note" style="margin-top:1.8cqw"><p>Nobody remembers the flags. Everybody knows how to find them.</p></div>
+  </div>
+</section>
+
+</main></div>
+<script src="deck.js"></script>

@@ -1,0 +1,1137 @@
+<title>Git 101</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="deck.css">
+<script>window.DECK = { track: "git", code: "GIT", title: "Git 101" };</script>
+
+<div id="stage"><main id="deck">
+
+<section class="slide opener" data-title="Git">
+  <h1>Git</h1>
+  <p class="sub">A time machine for your work, and the only reason more than one person can touch the same code.</p>
+  <div class="plan">
+    <div>The model</div>
+    <div>The daily loop</div>
+    <div>Branching &amp; pull requests</div>
+    <div>Conflicts &amp; recovery</div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Why version control">
+  <div class="marker">Section 1</div>
+  <h1>Why version control</h1>
+</section>
+
+<section class="slide" data-title="Why version control">
+  <h2>You have already invented a worse Git</h2>
+  <div class="body cols">
+    <div class="plate">
+      <pre data-lang="text">
+report.py
+report_v2.py
+report_v2_charlotte.py
+report_v2_charlotte_FIXED.py
+report_final.py
+report_final_v3.py
+report_final_v3_USE_THIS.py
+report_old_DO_NOT_DELETE.py
+</pre>
+    </div>
+    <div>
+      <p class="lead">Which one runs in production? Who changed the tax rate, and why?</p>
+      <ul class="bare">
+        <li>You cannot tell what changed between two of these without reading both.</li>
+        <li>Two people cannot edit safely – one of you loses work.</li>
+        <li>Nothing records <em>why</em> anything changed.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Why version control">
+  <h2>What a version control system gives you</h2>
+  <div class="body">
+    <table>
+      <tr><th>You get</th><th>Which means</th></tr>
+      <tr><td>Full history of every file</td><td>Go back to any past state, exactly, in seconds</td></tr>
+      <tr><td>A reason attached to each change</td><td><code>git log</code> and <code>git blame</code> answer "why is this line here?"</td></tr>
+      <tr><td>Parallel lines of work</td><td>Four people, four features, one codebase, no stepping on toes</td></tr>
+      <tr><td>A review gate</td><td>Nothing reaches <code>main</code> without another pair of eyes</td></tr>
+      <tr><td>A distributed copy</td><td>Every clone is a full backup. Your laptop dying is an inconvenience, not a disaster</td></tr>
+    </table>
+    <div class="note"><p>Git was written by Linus Torvalds in 2005, in ten days, because the Linux kernel team lost access to the tool they were using. It is distributed by design: there is no central server that Git itself needs. GitHub is a convention, not a requirement.</p></div>
+  </div>
+</section>
+
+<section class="slide part" data-title="The model">
+  <div class="marker">Section 2</div>
+  <h1>The model</h1>
+</section>
+
+<section class="slide" data-title="The model">
+  <h2>A commit is a snapshot with a name</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p>Git does not store diffs. Each commit records the <b>complete state</b> of the project, plus:</p>
+      <ul class="bare">
+        <li>who made it and when</li>
+        <li>a message</li>
+        <li>a pointer to its parent commit</li>
+      </ul>
+      <p>The name is a SHA-1 hash of all of that, so it is unique and tamper-evident. Change anything and you get a different commit.</p>
+      <div class="note"><p>Diffs are <em>computed</em> when you ask for them. That is why <code>git log</code> is fast and history never drifts.</p></div>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git show --stat a3f9c21
+commit a3f9c21e4b8d0f7a2c5e9b1d3f6a8c0e2b4d6f81
+Author: Charlotte De Baere &lt;cdb@example.com&gt;
+Date:   Tue Sep 9 14:02:11 2026 +0200
+
+    Fix VAT rate for Belgian invoices
+
+ src/invoice.py | 4 ++--
+ tests/test_invoice.py | 12 ++++++++
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The model">
+  <h2>Four places your code lives</h2>
+  <div class="body">
+    <div class="plate sm">
+      <pre data-lang="text">
+  working tree        staging area        local repo         remote
+  (your files)        (the index)         (.git)             (GitHub)
+       │                    │                  │                 │
+       │──── git add ──────▶│                  │                 │
+       │                    │─ git commit ────▶│                 │
+       │                    │                  │─── git push ───▶│
+       │                    │                  │◀── git fetch ───│
+       │◀───────── git checkout / restore ─────│                 │
+       │◀──────────────── git pull  =  fetch + merge ────────────│
+</pre>
+    </div>
+    <div class="cols" style="margin-top:1.6cqw">
+      <ul class="bare">
+        <li><b>Working tree</b> – the files you edit. The only place with unsaved work.</li>
+        <li><b>Staging area</b> – the changes you have chosen to include in the next commit.</li>
+      </ul>
+      <ul class="bare">
+        <li><b>Local repo</b> – every commit you have ever made, in <code>.git/</code>.</li>
+        <li><b>Remote</b> – the shared copy your team pulls from.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The model">
+  <h2>Why staging exists</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p>Because one editing session usually produces two unrelated changes, and they deserve two commits.</p>
+      <p>Staging lets you commit the bug fix now and keep the half-finished refactor in your working tree.</p>
+      <div class="note"><p><code>git add -p</code> walks you through your changes chunk by chunk and asks what to stage. It is the single best habit in this deck.</p></div>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git status --short
+ M src/invoice.py      ← bug fix, ready
+ M src/report.py       ← experiment, not ready
+
+$ git add src/invoice.py
+$ git commit -m "Fix VAT rate for BE invoices"
+
+$ git status --short
+ M src/report.py       ← still yours to finish
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The model">
+  <h2>A branch is a sticky note on a commit</h2>
+  <div class="body">
+    <div class="plate sm">
+      <pre data-lang="text">
+                                    ┌── feature/invoice-vat
+                                    ▼
+                        (D) ─── (E)
+                       ╱
+  (A) ─── (B) ─── (C)
+                    ▲
+                    └── main          HEAD ──▶ feature/invoice-vat
+</pre>
+    </div>
+    <div class="cols" style="margin-top:1.6cqw">
+      <div>
+        <p>A branch is a 41-byte file containing one commit hash. That is genuinely all it is – which is why creating one is instant and free.</p>
+        <p>Commit on a branch and the note moves forward to the new commit.</p>
+      </div>
+      <div>
+        <p><code>HEAD</code> is "where you are now" – normally a pointer to the branch you are on.</p>
+        <div style="font-family:var(--mono);font-size:1.35cqw">
+HEAD      <span class="dim">the current commit</span><br>
+HEAD~1    <span class="dim">its parent</span><br>
+HEAD~3    <span class="dim">three back</span><br>
+main      <span class="dim">tip of main</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="The daily loop">
+  <div class="marker">Section 3</div>
+  <h1>The daily loop</h1>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2>Set this up once, on every machine you use</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git config --global user.name "C De Baere"
+$ git config --global user.email "cdb@dr.io"
+
+$ git config --global init.defaultBranch main
+$ git config --global pull.rebase true
+$ git config --global core.editor "code --wait"
+
+$ git config --list --show-origin
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li>The name and email are stamped into <b>every commit you make</b>, permanently. Use the address your GitHub account uses, or your commits will not be linked to you.</li>
+        <li><code>pull.rebase true</code> keeps history linear instead of littering it with "Merge branch 'main' into main" commits.</li>
+      </ul>
+      <div class="note"><p><code>--global</code> writes to <code>~/.gitconfig</code>. Drop the flag inside a repo to override it for that project only – useful for a client email address.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2>Starting: <code>clone</code> if it exists, <code>init</code> if it does not</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">joining an existing project</span>
+      <pre data-lang="console">
+$ git clone git@github.com:roots/academy.git
+$ cd academy
+$ git status
+On branch main
+Your branch is up to date with 'origin/main'.
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">starting from nothing</span>
+      <pre data-lang="console">
+$ mkdir my-project &amp;&amp; cd my-project
+$ git init
+Initialized empty Git repository in
+  /my-project/.git/
+
+$ git remote add origin git@github.com:me/p.git
+$ git push -u origin main
+</pre>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>Everything Git knows lives in the <code>.git/</code> directory. Delete it and you have an ordinary folder with no history. Copy the folder and you copy the whole history with it.</p></div>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2><code>git status</code> before and after everything</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p class="lead">When you do not know what to do next, run <code>git status</code>. It tells you where you are and suggests the command.</p>
+      <ul class="bare">
+        <li><b>Untracked</b> – Git has never seen this file.</li>
+        <li><b>Modified</b> – changed since the last commit, not staged.</li>
+        <li><b>Staged</b> – will go into the next commit.</li>
+      </ul>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git status
+On branch feature/invoice-vat
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+        modified:   src/invoice.py
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to stage changes)
+        modified:   src/report.py
+
+Untracked files:
+        notes.txt
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2>The loop itself</h2>
+  <div class="body cols">
+    <div class="plate">
+      <pre data-lang="console">
+$ git switch -c feature/invoice-vat
+
+# ... edit files ...
+
+$ git status
+$ git diff
+$ git add src/invoice.py
+$ git commit -m "Fix VAT rate for BE invoices"
+
+$ git push -u origin feature/invoice-vat
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><code>git diff</code> – what you changed but have not staged.</li>
+        <li><code>git diff --staged</code> – what is about to be committed. Read this before every commit.</li>
+        <li><code>git add .</code> stages everything, including the debug print you forgot. Prefer naming files, or <code>git add -p</code>.</li>
+        <li><code>-u</code> on the first push links your local branch to the remote one, so later you can just say <code>git push</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2>A commit message is a message to a colleague</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">not useful</span>
+        <pre data-lang="text">
+fix
+wip
+stuff
+final
+asdf
+addressed review comments
+</pre>
+      </div>
+      <div class="plate sm" style="margin-top:1.2cqw">
+        <span class="cap">useful</span>
+        <pre data-lang="text">
+Fix VAT rate for Belgian invoices
+
+The rate was hardcoded to 6% from the
+2019 pilot. Reads it from the config
+table instead.
+
+Closes #418
+</pre>
+      </div>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><b>Subject line under 50 characters</b>, imperative mood: "Fix", "Add", "Remove" – it completes the sentence "this commit will…".</li>
+        <li>Blank line, then a body explaining <b>why</b>, not what. The diff already shows what.</li>
+        <li>One logical change per commit. If your message needs the word "and", split it.</li>
+      </ul>
+      <div class="note"><p>You are writing for yourself in eight months, staring at a line you do not recognise, on a Friday afternoon.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2>Reading history</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git log --oneline --graph --all -10
+* a3f9c21 (HEAD -&gt; feature/vat) Fix VAT rate
+* 7b21d04 Add invoice rounding test
+| * 4e8a1f2 (main) Bump pandas to 2.2
+|/
+* c19b7e5 Initial project layout
+
+$ git log --oneline -- src/invoice.py
+$ git log -S "VAT_RATE"    # touches that text
+$ git show a3f9c21
+$ git blame src/invoice.py
+$ git diff main..feature/vat
+</pre>
+    </div>
+    <div>
+      <p><code>--oneline --graph --all</code> is the only <code>log</code> invocation worth memorising. Make it an alias:</p>
+      <div class="plate sm" style="margin-top:0.8cqw">
+        <pre data-lang="console">
+$ git config --global alias.lg \
+  "log --oneline --graph --all -20"
+$ git lg
+</pre>
+      </div>
+      <p style="margin-top:1.1cqw"><code>git blame</code> shows who last touched each line and in which commit. Not for assigning fault – for finding the commit message that explains the line.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The daily loop">
+  <h2><code>.gitignore</code>: what must never be committed</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">.gitignore</span>
+      <pre data-lang="text">
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# Secrets – the important part
+.env
+*.pem
+credentials.json
+
+# OS and editor noise
+.DS_Store
+.vscode/
+
+# Data
+data/raw/
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><b>Secrets.</b> Once a key is pushed it is public and must be rotated, even if you delete it in the next commit.</li>
+        <li><b>Generated files.</b> Virtual environments, caches, build output – anyone can regenerate them, and they cause conflicts nobody can resolve.</li>
+        <li><b>Large data.</b> Git keeps every version of every file forever.</li>
+      </ul>
+      <div class="trap">
+        <p><b><code>.gitignore</code> does not apply to already-tracked files.</b> If you committed it once, ignoring it later changes nothing:</p>
+        <div style="font-family:var(--mono);font-size:1.25cqw;margin-top:0.4cqw">git rm --cached .env</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Branching workflow">
+  <div class="marker">Section 4</div>
+  <h1>Branching workflow</h1>
+</section>
+
+<section class="slide" data-title="Branching workflow">
+  <h2>The workflow you will use at every client</h2>
+  <div class="body">
+    <div class="plate sm">
+      <pre data-lang="text">
+  1  git switch main                     start from a known-good state
+  2  git pull                            get everyone else's work
+  3  git switch -c feature/short-name     your own line of work
+  4  edit → git add → git commit          small commits, often
+  5  git push -u origin feature/...       share it
+  6  open a pull request                  ask for review
+  7  address comments, push again         the PR updates itself
+  8  merge (squash), delete the branch    main stays clean
+  9  git switch main &amp;&amp; git pull          back to step 1
+</pre>
+    </div>
+    <div class="cols" style="margin-top:1.6cqw">
+      <ul class="bare">
+        <li><code>main</code> is always deployable. Nobody commits to it directly.</li>
+        <li>One branch per unit of work, and it lives for days, not weeks.</li>
+      </ul>
+      <ul class="bare">
+        <li>Every change reaches <code>main</code> through a reviewed pull request.</li>
+        <li><b>Today:</b> your personal branch is your line of work. Push there, open a PR against <code>main</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Branching workflow">
+  <h2>Branch commands</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git branch                  # local branches
+$ git branch -a               # plus remotes
+
+$ git switch -c feature/vat     # create + go
+$ git switch main               # go
+$ git switch -                # previous branch
+
+$ git branch -d feature/vat   # delete (merged)
+$ git branch -D feature/vat   # delete anyway
+$ git branch -m new-name      # rename current
+</pre>
+    </div>
+    <div>
+      <div class="note">
+        <p><code>switch</code> and <code>restore</code> replaced the overloaded <code>checkout</code> in Git 2.23. <code>checkout</code> still works and you will see it everywhere – but it did three unrelated jobs, which is why it was so easy to lose work with.</p>
+        <div style="font-family:var(--mono);font-size:1.3cqw;margin-top:0.7cqw">
+git switch  <span class="dim">→ move between branches</span><br>
+git restore <span class="dim">→ throw away file changes</span>
+        </div>
+      </div>
+      <p style="margin-top:1.2cqw">Name branches so a stranger can guess the content: <code>feature/invoice-vat</code>, <code>fix/null-customer-id</code>, <code>chore/bump-pandas</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Branching workflow">
+  <h2><code>origin</code>, tracking, and what <code>pull</code> really does</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git remote -v
+origin git@github.com:roots/academy.git (fetch)
+origin git@github.com:roots/academy.git (push)
+
+$ git fetch          # download, change nothing
+$ git status
+Your branch is behind 'origin/main' by 3.
+
+$ git pull             # fetch + integrate
+$ git push
+</pre>
+    </div>
+    <div>
+      <p><code>origin</code> is just the default nickname for the remote you cloned from.</p>
+      <p><code>origin/main</code> is a local, read-only bookmark of where <code>main</code> was on the server the last time you fetched. It does not update by magic.</p>
+      <div class="note">
+        <p><code>git fetch</code> is always safe – it never touches your files. When you are unsure of the state of the world, fetch first, then look.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Branching workflow">
+  <h2>Merging: two shapes</h2>
+  <div class="body cols">
+    <div>
+      <div class="plate sm">
+        <span class="cap">fast-forward – main did not move</span>
+        <pre data-lang="text">
+before:  A─B─C          (main)
+              ╲
+               D─E       (feature)
+
+after:   A─B─C─D─E       (main, feature)
+</pre>
+      </div>
+      <p style="margin-top:1cqw">Git just slides the <code>main</code> pointer forward. No merge commit, perfectly linear.</p>
+    </div>
+    <div>
+      <div class="plate sm">
+        <span class="cap">three-way – both moved</span>
+        <pre data-lang="text">
+before:  A─B─C─F─G       (main)
+              ╲
+               D─E       (feature)
+
+after:   A─B─C─F─G───M   (main)
+              ╲       ╱
+               D─────E
+</pre>
+      </div>
+      <p style="margin-top:1cqw"><code>M</code> is a merge commit with two parents. Git works out the combination from the common ancestor <code>C</code>.</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.3cqw"><p>On GitHub you will usually pick <b>squash and merge</b>: your branch's commits become one commit on <code>main</code>. Messy local history, clean project history.</p></div>
+</section>
+
+<section class="slide" data-title="Branching workflow">
+  <h2>Keeping your branch current</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">merge main into your branch</span>
+      <pre data-lang="console">
+$ git switch feature/vat
+$ git fetch
+$ git merge origin/main
+</pre>
+      <pre data-lang="text" style="margin-top:0.7cqw">
+A─B─C─F─G      (main)
+      ╲     ╲
+       D─E───M  (feature)
+</pre>
+    </div>
+    <div class="plate sm">
+      <span class="cap">or rebase onto it</span>
+      <pre data-lang="console">
+$ git switch feature/vat
+$ git pull --rebase origin main
+</pre>
+      <pre data-lang="text" style="margin-top:0.7cqw">
+A─B─C─F─G          (main)
+          ╲
+           D'─E'   (feature)
+</pre>
+    </div>
+  </div>
+  <div class="body cols" style="margin-top:0.4cqw">
+    <p>Merge is honest and never rewrites anything, at the cost of a knotty graph.</p>
+    <p>Rebase replays your commits on the new base: linear history, but <b>new commit hashes</b> – so only rebase work nobody else has pulled.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Branching workflow">
+  <h2>The golden rule</h2>
+  <div class="body">
+    <p class="lead">Rewrite history freely on a branch that is yours alone. Never rewrite history that someone else has pulled.</p>
+    <div class="cols" style="margin-top:1.8cqw">
+      <div>
+        <h3>Safe to rewrite</h3>
+        <ul class="bare">
+          <li>Commits still only on your laptop.</li>
+          <li>Your own feature branch, pushed but not shared – force-push with <code>--force-with-lease</code>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Never rewrite</h3>
+        <ul class="bare">
+          <li><code>main</code>, <code>develop</code>, release branches.</li>
+          <li>Any branch a colleague has based work on.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="trap" style="margin-top:1.6cqw">
+      <p><b><code>git push --force</code> overwrites the remote branch with yours</b>, deleting commits other people pushed in the meantime. <code>--force-with-lease</code> refuses if the remote moved since your last fetch. Make it a habit; it costs nothing and has saved entire afternoons.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Conflicts">
+  <div class="marker">Section 5</div>
+  <h1>Conflicts</h1>
+</section>
+
+<section class="slide" data-title="Conflicts">
+  <h2>A conflict is Git refusing to guess</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p>It happens when two branches changed the <b>same lines</b> of the same file, and Git has no way to know which version is right.</p>
+      <ul class="bare">
+        <li>Different files? No conflict.</li>
+        <li>Different parts of one file? Usually no conflict.</li>
+        <li>Same lines? Your call.</li>
+      </ul>
+      <div class="note"><p>Conflicts are not a failure. They are a question. Nothing is broken and nothing is lost while you answer it.</p></div>
+    </div>
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git merge origin/main
+Auto-merging src/invoice.py
+CONFLICT (content): conflict in src/invoice.py
+Automatic merge failed; fix conflicts and then
+commit the result.
+
+$ git status
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+Unmerged paths:
+        both modified:   src/invoice.py
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Conflicts">
+  <h2>Reading the markers</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="text">
+def total(amount):
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    return amount * 1.21
+=======
+    return round(amount * 1.06, 2)
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; origin/main
+</pre>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><td><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code></td><td>your version starts</td></tr>
+        <tr><td><code>=======</code></td><td>the divider</td></tr>
+        <tr><td><code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; origin/main</code></td><td>their version ends</td></tr>
+      </table>
+      <p style="margin-top:1.2cqw">Your job: delete all three marker lines and leave the code you want – theirs, yours, or a combination. Often the right answer is neither.</p>
+      <div class="trap"><p><b>Search for <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> before you commit.</b> A marker left in a file is a syntax error you will find in CI, in front of everyone.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Conflicts">
+  <h2>Resolving, step by step</h2>
+  <div class="body cols wide-left">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git status                    # which files?
+$ git diff                    # see both sides
+
+# ... edit each file, remove markers ...
+
+$ python3 -m pytest           # still working?
+$ git add src/invoice.py      # mark resolved
+$ git status                  # anything left?
+$ git commit                  # finish the merge
+
+# changed your mind at any point:
+$ git merge --abort
+</pre>
+    </div>
+    <div>
+      <ul class="bare">
+        <li><code>git add</code> is how you say "resolved". Until then the merge is paused.</li>
+        <li><code>git merge --abort</code> puts everything back exactly as it was. It always works while the merge is unfinished.</li>
+        <li>Run the tests <b>before</b> committing the merge. A resolution that compiles is not necessarily correct.</li>
+      </ul>
+      <div class="note">
+        <p>Taking one side wholesale:</p>
+        <div style="font-family:var(--mono);font-size:1.25cqw">git checkout --ours  &lt;file&gt;<br>git checkout --theirs &lt;file&gt;</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Game: conflict duel">
+  <div class="badge">Game, 15 min</div>
+  <h2>Conflict duel</h2>
+  <div class="body cols wide-left">
+    <div>
+      <p class="lead">In pairs. One repo, one file, two people editing the same seven lines on purpose.</p>
+      <ol class="tasks">
+        <li>Both clone the shared repo and both branch from <code>main</code>.</li>
+        <li>Each of you rewrites <code>greeting.py</code> in your own style. Commit and push.</li>
+        <li>Player A merges first and wins the race. Player B now has a conflict.</li>
+        <li>Player B resolves it so that <b>both</b> intentions survive, then pushes.</li>
+        <li><b>Take home.</b> Swap roles and go again, with three commits each before merging.</li>
+      </ol>
+      <p><code>exercises/git/git-games.md</code> · game 1</p>
+    </div>
+    <div class="plate sm">
+      <span class="cap">scoring</span>
+      <pre data-lang="text">
++3  resolution keeps both intentions
++2  tests pass after the merge
++1  commit message explains the choice
+-5  a &lt;&lt;&lt;&lt;&lt;&lt;&lt; marker reaches main
+-5  "git push --force" on main
+</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide part" data-title="Recovery">
+  <div class="marker">Section 6</div>
+  <h1>Recovery</h1>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2>Two questions get you to the right command</h2>
+  <div class="body">
+    <p class="lead">Where is the change now, and has anyone else seen it?</p>
+    <table class="sm">
+      <tr><th>The change is</th><th>Undo it with</th></tr>
+      <tr><td>edited, not staged</td><td><code>git restore &lt;file&gt;</code></td></tr>
+      <tr><td>staged, not committed</td><td><code>git restore --staged &lt;file&gt;</code></td></tr>
+      <tr><td>committed, not pushed</td><td><code>git commit --amend</code>, or <code>git reset --soft HEAD~1</code></td></tr>
+      <tr><td>pushed, on your own branch</td><td>rewrite, then <code>git push --force-with-lease</code></td></tr>
+      <tr><td>pushed, and someone has pulled it</td><td><code>git revert &lt;commit&gt;</code> – never rewrite</td></tr>
+      <tr><td>gone, and you cannot find it</td><td><code>git reflog</code></td></tr>
+    </table>
+    <div class="note"><p>Before any of them: <code>git status</code>, then <code>git log --oneline -5</code>. Ten seconds of looking saves an hour of undoing your undo.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2>Not committed yet</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">"I want my edits gone"</span>
+      <pre data-lang="console">
+$ git restore src/invoice.py     # one file
+$ git restore .                  # everything
+
+# unstage but keep the edits
+$ git restore --staged src/invoice.py
+
+# also delete new untracked files
+$ git clean -n                 # dry run first
+$ git clean -fd
+</pre>
+    </div>
+    <div>
+      <div class="trap">
+        <p><b><code>git restore</code> is the one destructive command with no undo.</b> Uncommitted work has never been recorded anywhere, so Git cannot bring it back. <code>git clean -fd</code> is the same, for files Git has never seen.</p>
+        <p>Always run <code>git clean -n</code> first and read the list.</p>
+      </div>
+      <div class="note" style="margin-top:1.2cqw"><p>Not sure you want to lose it? <code>git stash</code> instead – it costs nothing and it is reversible.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2><code>git stash</code>: put it down and pick it up later</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git stash push -m "half-done VAT refactor"
+Saved working directory and index state
+
+$ git switch main      # clean tree, free to go
+# ... fix the urgent thing ...
+
+$ git switch feature/vat
+$ git stash list
+stash@{0}: On feature/vat: half-done refactor
+
+$ git stash pop          # restore + remove
+$ git stash apply       # restore, keep a copy
+$ git stash drop
+</pre>
+    </div>
+    <div>
+      <p>The everyday use: you are mid-thought and someone needs a hotfix on <code>main</code>.</p>
+      <ul class="bare">
+        <li>Always pass <code>-m</code> with a message. <code>stash@{3}</code> on Thursday means nothing to you.</li>
+        <li><code>git stash push -u</code> also stashes untracked files.</li>
+      </ul>
+      <div class="trap"><p><b>The stash is a drawer, not a filing cabinet.</b> Work left there gets forgotten and never shows up in <code>git log</code>. If it will take more than an hour, make a commit on a branch instead.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2>"That commit was wrong": <code>--amend</code></h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+# bad message
+$ git commit --amend -m "Fix VAT for BE"
+
+# forgot a file
+$ git add tests/test_invoice.py
+$ git commit --amend --no-edit
+
+# already pushed the branch?
+$ git push --force-with-lease
+</pre>
+    </div>
+    <div>
+      <p><code>--amend</code> does not edit the last commit. It <b>replaces</b> it with a new one – new hash, old commit orphaned.</p>
+      <div class="trap">
+        <p><b>Only amend the tip of your own unshared branch.</b> Amending something a colleague has pulled gives them a duplicate history and a bad afternoon.</p>
+      </div>
+      <div class="note" style="margin-top:1.2cqw"><p>Amending the commit that is already on <code>main</code>: don't. Make a new commit.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2><code>reset</code>: move the branch pointer backwards</h2>
+  <div class="body">
+    <table class="sm">
+      <tr><th>Command</th><th>History</th><th>Staging area</th><th>Your files</th><th>Use when</th></tr>
+      <tr><td><code>git reset --soft HEAD~1</code></td><td>commit undone</td><td>kept staged</td><td>untouched</td><td>Recommit differently – split it, reword it, add a file</td></tr>
+      <tr><td><code>git reset HEAD~1</code> <span class="dim">(--mixed, the default)</span></td><td>commit undone</td><td>cleared</td><td>untouched</td><td>Start the commit over from scratch</td></tr>
+      <tr><td><code>git reset --hard HEAD~1</code></td><td>commit undone</td><td>cleared</td><td><b>thrown away</b></td><td>You are certain the work was worthless</td></tr>
+    </table>
+    <div class="cols" style="margin-top:1.6cqw">
+      <div class="plate sm">
+        <span class="cap">the most common one, by far</span>
+        <pre data-lang="console">
+$ git reset --soft HEAD~1
+$ git status             # your changes, staged
+$ git commit -m "A message I actually mean"
+</pre>
+      </div>
+      <div class="trap">
+        <p><b><code>--hard</code> is the one that hurts.</b> It discards uncommitted work with no record. Everything else on this slide is recoverable through the reflog.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2><code>revert</code>: undo in public</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git log --oneline -3
+a3f9c21 Fix VAT rate      ← this broke prod
+7b21d04 Add rounding test
+c19b7e5 Initial layout
+
+$ git revert a3f9c21
+[main 5d0c8e3] Revert "Fix VAT rate"
+
+$ git log --oneline -2
+5d0c8e3 Revert "Fix VAT rate"
+a3f9c21 Fix VAT rate
+</pre>
+    </div>
+    <div>
+      <p><code>revert</code> creates a <b>new commit</b> that applies the inverse of an old one. Nothing is rewritten, so it is safe on shared branches.</p>
+      <table class="sm" style="margin-top:1.2cqw">
+        <tr><th></th><th>reset</th><th>revert</th></tr>
+        <tr><td>History</td><td>rewritten</td><td>added to</td></tr>
+        <tr><td>Safe when shared</td><td>no</td><td>yes</td></tr>
+        <tr><td>Leaves a record</td><td>no</td><td>yes</td></tr>
+      </table>
+      <p class="dim" style="margin-top:0.9cqw">On <code>main</code>, the answer is essentially always <code>revert</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2>"I committed to <code>main</code> by accident"</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">you have not pushed yet</span>
+      <pre data-lang="console">
+$ git log --oneline -2
+a3f9c21 (HEAD -&gt; main) Fix VAT rate
+c19b7e5 (origin/main) Initial layout
+
+# 1. save the work on a proper branch
+$ git switch -c feature/invoice-vat
+
+# 2. put main back where the remote is
+$ git switch main
+$ git reset --hard origin/main
+
+# 3. carry on
+$ git switch feature/invoice-vat
+</pre>
+    </div>
+    <div>
+      <p>The branch is a pointer, so this is just moving a sticky note. Your commit is still there, now on a branch with a name.</p>
+      <div class="note">
+        <p><b>Already pushed to <code>main</code>?</b> Do not force-push. Revert it in the open and move on:</p>
+        <div style="font-family:var(--mono);font-size:1.25cqw;margin-top:0.4cqw">git revert a3f9c21<br>git push</div>
+      </div>
+      <p style="margin-top:1.2cqw" class="dim">Most teams protect <code>main</code> on GitHub so this cannot happen. If you can push straight to <code>main</code>, ask why.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2><code>git reflog</code>: the undo history for your undos</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git reflog
+5d0c8e3 HEAD@{0}: reset: moving to origin/main
+a3f9c21 HEAD@{1}: commit: Fix VAT rate
+7b21d04 HEAD@{2}: checkout: moving to main
+4e8a1f2 HEAD@{3}: commit: Experiment I deleted
+
+$ git switch -c rescue a3f9c21
+# or, to put the branch back:
+$ git reset --hard HEAD@{1}
+</pre>
+    </div>
+    <div>
+      <p class="lead">Git logs every move <code>HEAD</code> makes, locally, for 90 days.</p>
+      <p>Bad reset, bad rebase, deleted branch, wrong amend – the commit is still in <code>.git</code>. The reflog is how you find its hash again.</p>
+      <div class="note"><p>If you have committed it, you can get it back. That is the sentence to remember from this whole section.</p></div>
+      <p class="dim">The exception, again: work you never committed.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2><code>cherry-pick</code>: I want that one commit, here</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <pre data-lang="console">
+$ git log --oneline feature/experiment
+9f2a7c1 Refactor everything
+8e1b3d4 Fix the typo in the error message
+
+$ git switch main
+$ git cherry-pick 8e1b3d4
+[main 2c7f9a0] Fix the typo in the message
+</pre>
+      <pre data-lang="text" style="margin-top:0.8cqw">
+before:  A─B          (main)
+          ╲
+           C─D        (experiment)
+
+after:   A─B─D'       (main)
+          ╲
+           C─D        (experiment)
+</pre>
+    </div>
+    <div>
+      <p>Copies the change from one commit onto your current branch as a new commit.</p>
+      <ul class="bare">
+        <li>Useful for a hotfix that needs to land on a release branch too.</li>
+        <li>Not a substitute for merging. Cherry-picking half a branch leaves you with two copies of the same change and a confusing history.</li>
+        <li>Conflicts are resolved exactly like a merge, then <code>git cherry-pick --continue</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2>"I committed a secret"</h2>
+  <div class="body cols wide-right">
+    <div>
+      <p class="lead">Rotate the credential first. Everything else is secondary.</p>
+      <ol class="tasks">
+        <li><b>Revoke and reissue the key.</b> Pushed history is public, cached and mirrored.</li>
+        <li>Tell whoever owns the system. Quietly deleting it turns an incident into a breach.</li>
+        <li>Then clean the history, force-pushing with the team's agreement.</li>
+        <li>Add it to <code>.gitignore</code> and move the value to an environment variable.</li>
+      </ol>
+    </div>
+    <div class="plate sm">
+      <span class="cap">only just committed, nothing pushed</span>
+      <pre data-lang="console">
+$ git rm --cached .env
+$ echo ".env" &gt;&gt; .gitignore
+$ git commit --amend --no-edit
+</pre>
+      <span class="cap" style="margin-top:1.1cqw">already in older commits</span>
+      <pre data-lang="console">
+$ pipx install git-filter-repo
+$ git filter-repo --invert-paths --path .env
+$ git push --force-with-lease --all
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.3cqw">Every colleague must re-clone: every hash changed.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Recovery">
+  <h2>Two more worth knowing exist</h2>
+  <div class="body cols">
+    <div class="plate sm">
+      <span class="cap">rebase -i – tidy up before review</span>
+      <pre data-lang="console">
+$ git rebase -i HEAD~4
+
+pick 7b21d04 Add rounding test
+squash 4e8a1f2 fix typo
+squash 9f2a7c1 fix typo again
+reword a3f9c21 Fix VAT rate
+
+# pick / reword / squash / drop / edit
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.35cqw">Turn six "wip" commits into one reviewable change. Your branch only.</p>
+    </div>
+    <div class="plate sm">
+      <span class="cap">bisect – find the commit that broke it</span>
+      <pre data-lang="console">
+$ git bisect start
+$ git bisect bad                # now
+$ git bisect good v1.4.0        # then
+
+# Git checks out the midpoint; you test
+$ git bisect good     # or bad
+# ... repeat ~log2(n) times ...
+
+a3f9c21 is the first bad commit
+$ git bisect reset
+</pre>
+      <p style="margin-top:0.9cqw;font-size:1.35cqw">400 commits, 9 tests. Binary search on history.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Exercises: recovery drills">
+  <div class="badge">Drills, 20 min</div>
+  <h2>Recovery drills</h2>
+  <div class="body cols wide-left">
+    <div>
+      <p class="lead">Nine broken repositories, generated on demand. The first five now; the rest are yours to take home.</p>
+      <ol class="tasks">
+        <li>Unstage a file without losing the edits.</li>
+        <li>Throw away one file's changes, keep the rest.</li>
+        <li>Reword the last commit message.</li>
+        <li>Split one commit into two.</li>
+        <li>Move a commit off <code>main</code> onto a feature branch.</li>
+        <li>Recover a branch you deleted by mistake.</li>
+        <li>Undo a commit that is already on <code>main</code>.</li>
+        <li>Get back the work you lost to <code>reset --hard</code>.</li>
+        <li>Remove a committed <code>.env</code> from the last commit.</li>
+      </ol>
+    </div>
+    <div class="plate sm">
+      <span class="cap">exercises/git/</span>
+      <pre data-lang="console">
+$ cd exercises/git/scenarios
+$ ./make-scenario.sh list
+$ ./make-scenario.sh lost-commit
+Created /tmp/git-drills/lost-commit
+
+$ cd /tmp/git-drills/lost-commit
+$ cat TASK.md
+</pre>
+      <p style="margin-top:1cqw;font-size:1.4cqw">Each scenario has a <code>TASK.md</code> with the goal and a <code>check.sh</code> that tells you when you are done. Hints are in <code>git-drills.md</code> – read them after trying.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide task" data-title="Games">
+  <div class="badge">Take home</div>
+  <h2>Two more games</h2>
+  <div class="body cols">
+    <div>
+      <h3>Git golf</h3>
+      <p>A target repository state is described. Reach it in the fewest commands. Everyone reveals their solution at the same time.</p>
+      <ul class="bare">
+        <li>Fewest commands wins; ties broken by clearest history.</li>
+        <li>Nine holes, increasing in difficulty.</li>
+        <li><code>git-games.md</code> · game 2</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Blame detective</h3>
+      <p>A repository with 40 commits and one bug. Find, using only Git, who introduced it, when, and what they thought they were fixing.</p>
+      <ul class="bare">
+        <li><code>git log -S</code>, <code>git blame</code>, <code>git bisect</code>, <code>git show</code>.</li>
+        <li>Write your answer as a three-line incident note.</li>
+        <li><code>git-games.md</code> · game 3</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.4cqw"><p>Also worth your evening: <b>learngitbranching.js.org</b> – a visual sandbox where you can see the graph move as you type commands.</p></div>
+</section>
+
+<section class="slide part" data-title="Recap">
+  <div class="marker">Section 7</div>
+  <h1>Recap</h1>
+</section>
+
+<section class="slide" data-title="Recap">
+  <h2>The twelve commands that are 95% of the job</h2>
+  <div class="body cols">
+    <div>
+      <table class="sm">
+        <tr><td><code>git status</code></td><td>where am I</td></tr>
+        <tr><td><code>git diff</code></td><td>what did I change</td></tr>
+        <tr><td><code>git add -p</code></td><td>choose what to commit</td></tr>
+        <tr><td><code>git commit -m</code></td><td>record it</td></tr>
+        <tr><td><code>git log --oneline --graph</code></td><td>read the history</td></tr>
+        <tr><td><code>git switch -c</code></td><td>new line of work</td></tr>
+      </table>
+    </div>
+    <div>
+      <table class="sm">
+        <tr><td><code>git pull</code></td><td>get their work</td></tr>
+        <tr><td><code>git push</code></td><td>share yours</td></tr>
+        <tr><td><code>git merge</code></td><td>bring lines together</td></tr>
+        <tr><td><code>git stash</code></td><td>put it down for a minute</td></tr>
+        <tr><td><code>git restore</code></td><td>undo uncommitted</td></tr>
+        <tr><td><code>git reflog</code></td><td>find what you lost</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.6cqw">
+    <p>Three habits worth more than any command: <b>commit small and often</b>, <b>read <code>git diff --staged</code> before every commit</b>, and <b>run <code>git status</code> whenever you are unsure</b>.</p>
+    <p>Next: Python, which is what you will be committing.</p>
+  </div>
+</section>
+
+</main></div>
+<script src="deck.js"></script>

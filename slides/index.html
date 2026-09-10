@@ -1,0 +1,397 @@
+<title>Software Development 101</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 clamp(15px, 1.05vw + 10px, 18px)/1.5 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 64px) 96px; }
+
+  header { padding: clamp(48px, 8vh, 104px) 0 0; }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(44px, 8.6vw, 116px);
+    font-weight: 800;
+    letter-spacing: -0.038em;
+    line-height: 0.92;
+  }
+
+  .stamp {
+    font-family: var(--mono);
+    font-size: 0.8em;
+    color: var(--ink-soft);
+    margin-bottom: 1.6em;
+  }
+
+  header p {
+    max-width: 46ch;
+    margin: 1.2em 0 0;
+    font-size: clamp(19px, 1.5vw + 8px, 27px);
+    line-height: 1.32;
+  }
+
+  h2 {
+    margin: 0 0 0.7em;
+    font-size: clamp(24px, 2.2vw + 8px, 38px);
+    font-weight: 800;
+    letter-spacing: -0.022em;
+  }
+
+  h3 { margin: 0 0 0.4em; font-size: 1.12em; font-weight: 700; }
+
+  section { margin-top: clamp(56px, 9vh, 104px); }
+
+  /* ── Timetable ── */
+
+  .day { border-top: 2px solid var(--ink); }
+
+  .slot {
+    display: grid;
+    grid-template-columns: 5.4em 10px 1fr;
+    gap: 0 clamp(14px, 2vw, 28px);
+    align-items: stretch;
+    border-bottom: 1px solid var(--rule);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .slot time {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--ink-soft);
+    padding: 0.95em 0 1em;
+  }
+
+  .spine { background: var(--rule); }
+  .slot[data-t="py"]  .spine { background: var(--py); }
+  .slot[data-t="git"] .spine { background: var(--git); }
+  .slot[data-t="nix"] .spine { background: var(--nix); }
+
+  .slot .what {
+    padding: 0.95em 0 1em;
+    min-height: calc(var(--min) * 0.62px);
+  }
+
+  .slot .what b { font-size: 1.06em; letter-spacing: -0.01em; }
+  .slot .what span { display: block; color: var(--ink-soft); margin-top: 0.2em; }
+  .slot .what em { font-style: normal; font-family: var(--mono); font-size: 0.82em; }
+
+  a.slot:hover .what b { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .slot[data-t="break"] { background: repeating-linear-gradient(105deg, transparent 0 9px, rgba(93,102,112,.07) 9px 18px); }
+  .slot[data-t="break"] .what { color: var(--ink-soft); }
+
+  /* ── Track bands ── */
+
+  .track {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: clamp(20px, 4vw, 56px);
+    padding: clamp(24px, 3.4vw, 40px) 0;
+    border-top: 2px solid var(--ink);
+  }
+
+  .track:last-of-type { border-bottom: 2px solid var(--ink); }
+  .track .head { display: flex; flex-direction: column; }
+
+  .track .num {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    color: var(--accent);
+    margin-bottom: 0.5em;
+  }
+
+  .track h2 { color: var(--accent); }
+  .track .head p { margin: 0.2em 0 0; max-width: 34ch; }
+
+  .track ul { margin: 0; padding-left: 1.1em; columns: 2; column-gap: clamp(20px, 3vw, 40px); }
+  .track li { margin-bottom: 0.42em; break-inside: avoid; }
+  .track li::marker { color: var(--accent); }
+
+  .open {
+    align-self: flex-start;
+    margin-top: 1.4em;
+    display: inline-block;
+    padding: 0.5em 1em;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .open:hover { filter: brightness(1.12); }
+  #py  { --accent: var(--py); }
+  #git { --accent: var(--git); }
+  #nix { --accent: var(--nix); }
+
+  /* ── Prose blocks ── */
+
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: clamp(24px, 3.5vw, 48px); }
+  .two > div > p { max-width: 44ch; }
+
+  ol.steps { margin: 0; padding-left: 1.3em; }
+  ol.steps li { margin-bottom: 0.5em; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: #d3d1c8;
+    padding: 0.1em 0.32em;
+  }
+
+  pre {
+    margin: 0.9em 0 0;
+    background: var(--plate);
+    color: #dfe3e8;
+    padding: 1em 1.2em;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.86em;
+    line-height: 1.55;
+    border-left: 4px solid var(--rule);
+  }
+
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  .files { border-top: 1px solid var(--rule); }
+  .files div { display: grid; grid-template-columns: 13em 1fr; gap: 0 1.4em; padding: 0.65em 0; border-bottom: 1px solid var(--rule); }
+  .files div > :first-child { font-family: var(--mono); font-size: 0.86em; }
+  .files span:last-child { color: var(--ink-soft); }
+  .files a { color: var(--ink); }
+
+  footer { margin-top: clamp(56px, 9vh, 96px); padding-top: 1.4em; border-top: 2px solid var(--ink); color: var(--ink-soft); font-size: 0.9em; }
+
+  a { color: var(--ink); text-underline-offset: 0.16em; }
+  :focus-visible { outline: 3px solid var(--py); outline-offset: 3px; }
+
+  @media (max-width: 620px) {
+    .track { grid-template-columns: 1fr; }
+    .track ul { columns: 1; }
+    .files div { grid-template-columns: 1fr; gap: 0.15em; }
+  }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="stamp">RootsAcademy 2026. One day, six hours.</div>
+  <h1>Software<br>Development 101</h1>
+  <p>Write Python that other people can read. Use Git the way a team uses it. Work in a terminal without being afraid of it.</p>
+</header>
+
+<section>
+  <h2>The day</h2>
+  <div class="day">
+    <div class="slot" data-t="setup" style="--min:15">
+      <time>09:00</time><div class="spine"></div>
+      <div class="what"><b>Welcome and setup check</b>
+        <span>Python 3.11+, Git, an editor, a GitHub account with an SSH key. <em>15 min</em></span></div>
+    </div>
+
+    <a class="slot" data-t="git" href="git.html#1" style="--min:50">
+      <time>09:15</time><div class="spine"></div>
+      <div class="what"><b>Git – version control, the model, the daily loop</b>
+        <span>Why it exists, snapshots and the staging area, branches as pointers, status, diff, commit, .gitignore. <em>50 min, slides 1-17</em></span></div>
+    </a>
+
+    <div class="slot" data-t="break" style="--min:10">
+      <time>10:05</time><div class="spine"></div>
+      <div class="what"><b>Break</b><span><em>10 min</em></span></div>
+    </div>
+
+    <a class="slot" data-t="git" href="git.html#18" style="--min:40">
+      <time>10:15</time><div class="spine"></div>
+      <div class="what"><b>Git – branching, pull requests, conflicts</b>
+        <span>The team workflow, merge versus rebase, the golden rule, resolving a conflict start to finish. Conflict duel. <em>40 min, slides 18-29</em></span></div>
+    </a>
+
+    <a class="slot" data-t="git" href="git.html#30" style="--min:35">
+      <time>10:55</time><div class="spine"></div>
+      <div class="what"><b>Git – recovery</b>
+        <span>restore, stash, amend, reset, revert, reflog, cherry-pick, a committed secret. Hands-on drills. <em>35 min, slides 30-45</em></span></div>
+    </a>
+
+    <a class="slot" data-t="py" href="python.html#1" style="--min:30">
+      <time>11:30</time><div class="spine"></div>
+      <div class="what"><b>Python – basics, types, f-strings, containers</b>
+        <span>How Python runs, variables, numbers and money, strings and encodings, truthiness, the four containers, parsing at the edge. <em>30 min, slides 1-22</em></span></div>
+    </a>
+
+    <div class="slot" data-t="break" style="--min:120">
+      <time>12:00</time><div class="spine"></div>
+      <div class="what"><b>Lunch</b><span><em>two hours</em></span></div>
+    </div>
+
+    <a class="slot" data-t="py" href="python.html#23" style="--min:45">
+      <time>14:00</time><div class="spine"></div>
+      <div class="what"><b>Python – control flow and functions</b>
+        <span>Conditionals, loops, arguments and defaults, the mutable default trap, signatures, pure functions, type hints. <em>45 min, slides 23-40</em></span></div>
+    </a>
+
+    <a class="slot" data-t="py" href="python.html#41" style="--min:30">
+      <time>14:45</time><div class="spine"></div>
+      <div class="what"><b>Python – data structures and sugar</b>
+        <span>Lists and slicing, references versus copies, tuples, dicts, sets, what each operation costs, comprehensions. <em>30 min, slides 41-63</em></span></div>
+    </a>
+
+    <div class="slot" data-t="break" style="--min:10">
+      <time>15:15</time><div class="spine"></div>
+      <div class="what"><b>Break</b><span><em>10 min</em></span></div>
+    </div>
+
+    <a class="slot" data-t="py" href="python.html#64" style="--min:35">
+      <time>15:25</time><div class="spine"></div>
+      <div class="what"><b>Python – classes and design principles</b>
+        <span>Classes, dunder methods, composition, then DRY, KISS, YAGNI and SOLID against one real job. <em>35 min, slides 64-88. Sections 8-13 – errors, packages, tests, generators, the case study – are reference and take-home.</em></span></div>
+    </a>
+
+    <a class="slot" data-t="nix" href="linux.html#1" style="--min:35">
+      <time>16:00</time><div class="spine"></div>
+      <div class="what"><b>Linux – the OS, terminal, pipes, permissions</b>
+        <span>What a kernel does, a short history, navigation, find and grep, redirection, chmod, processes. Scavenger hunt. <em>35 min, slides 1-21</em></span></div>
+    </a>
+
+    <a class="slot" data-t="nix" href="linux.html#22" style="--min:20">
+      <time>16:35</time><div class="spine"></div>
+      <div class="what"><b>Linux – bash scripting and SSH</b>
+        <span>Shebang, quoting, arguments, exit codes, set -euo pipefail, keys and remote access. <em>20 min, slides 22-38</em></span></div>
+    </a>
+
+    <div class="slot" data-t="setup" style="--min:5">
+      <time>16:55</time><div class="spine"></div>
+      <div class="what"><b>Wrap-up and questions</b>
+        <span>Push your solutions, open your pull request. <em>5 min</em></span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="track" id="git">
+    <div class="head">
+      <div class="num">Track 1, 125 minutes</div>
+      <h2>Git</h2>
+      <p>The mental model first, then the ten commands you need, then how to get out of trouble.</p>
+      <a class="open" href="git.html">Open the deck – 45 slides</a>
+    </div>
+    <ul>
+      <li>Why version control exists</li>
+      <li>Snapshots, the staging area, the DAG</li>
+      <li>Branches as pointers, <code>HEAD</code></li>
+      <li>The daily loop, commit messages</li>
+      <li><code>.gitignore</code> and secrets</li>
+      <li>Branching and pull requests</li>
+      <li>Fast-forward, three-way, squash</li>
+      <li>Merge versus rebase, the golden rule</li>
+      <li>Conflicts, start to finish</li>
+      <li><code>restore</code>, <code>stash</code>, <code>amend</code>, <code>reset</code>, <code>revert</code></li>
+      <li><code>reflog</code>, <code>cherry-pick</code>, <code>bisect</code></li>
+      <li>Removing a committed secret</li>
+    </ul>
+  </div>
+
+  <div class="track" id="py">
+    <div class="head">
+      <div class="num">Track 2, 140 minutes</div>
+      <h2>Python</h2>
+      <p>Enough of the language to write something a colleague would approve, enough design to keep it approvable, and enough of the ecosystem to ship it.</p>
+      <a class="open" href="python.html">Open the deck – 131 slides</a>
+    </div>
+    <ul>
+      <li>Variables, numbers, strings, f-strings</li>
+      <li>Lists, tuples, sets, dictionaries</li>
+      <li>Conditionals and comparison chaining</li>
+      <li>Loops, <code>range</code>, <code>break</code>, <code>continue</code></li>
+      <li>Functions, defaults, <code>*args</code>, scope</li>
+      <li>Slicing, sorting, references and copies</li>
+      <li>Comprehensions, <code>lambda</code>, <code>enumerate</code>, <code>zip</code></li>
+      <li>Classes, dunder methods, <code>@dataclass</code>, composition</li>
+      <li><b>DRY, KISS, YAGNI and SOLID</b>, in Python idiom</li>
+      <li>Exceptions you design, retries, <code>logging</code></li>
+      <li>Modules, packages, layering, virtual environments</li>
+      <li><code>pytest</code>, parametrize, fakes over mocks</li>
+      <li>Generators, context managers, decorators</li>
+      <li>A nightly data job, start to finish</li>
+      <li>PEP 8, <code>ruff</code>, <code>mypy</code>, review</li>
+    </ul>
+  </div>
+
+  <div class="track" id="nix">
+    <div class="head">
+      <div class="num">Track 3, 55 minutes</div>
+      <h2>Linux</h2>
+      <p>Where your code runs, and the only interface you get when it stops running.</p>
+      <a class="open" href="linux.html">Open the deck – 38 slides</a>
+    </div>
+    <ul>
+      <li>Kernel, system calls, shell</li>
+      <li>Unix to Linux in nine lines</li>
+      <li>The filesystem hierarchy</li>
+      <li>Navigation and file inspection</li>
+      <li><code>find</code>, <code>grep</code>, and the text tools</li>
+      <li>Pipes, redirection, the three streams</li>
+      <li>Permissions and <code>chmod</code></li>
+      <li>Processes, signals, key bindings</li>
+      <li><code>PATH</code> and environment variables</li>
+      <li>Scripts: quoting, arguments, exit codes</li>
+      <li><code>set -euo pipefail</code></li>
+      <li>SSH keys, <code>~/.ssh/config</code>, <code>rsync</code></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Before we start</h2>
+  <div class="two">
+    <div>
+      <h3>Check your machine</h3>
+      <p>Run this. Every line should print a version.</p>
+<pre><code>python3 --version    # 3.11 or newer
+git --version
+ssh -T git@github.com</code></pre>
+      <p>If the last line does not greet you by name, that is the first thing we fix – the Linux track covers it, and a trainer can help you now.</p>
+    </div>
+    <div>
+      <h3>How to hand in</h3>
+      <ol class="steps">
+        <li>Clone the course repository.</li>
+        <li><code>git switch -c firstname-lastname</code> – your personal branch.</li>
+        <li>Solve exercises in <code>exercises/</code>, committing as you go. Small commits, real messages.</li>
+        <li>Push: <code>git push -u origin firstname-lastname</code>.</li>
+        <li>Open a pull request against <code>main</code> and leave it open. You will get review comments.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Materials</h2>
+  <div class="files">
+    <div><a href="../exercises/README.md">exercises/</a><span>Self-checking exercises for all three tracks, with solutions</span></div>
+    <div><a href="../exercises/python/spot_the_bug.md">python/spot_the_bug.md</a><span>Eight broken snippets. Diagnose, then fix</span></div>
+    <div><a href="../exercises/python/08_design.py">python/08_design.py</a><span>Six refactorings. The assertions test the design, not only the result</span></div>
+    <div><a href="../exercises/python/09_pipeline.py">python/09_pipeline.py</a><span>Build the nightly job: parse, price, aggregate, report the rejects</span></div>
+    <div><a href="../exercises/git/git-drills.md">git/git-drills.md</a><span>Nine recovery scenarios with hints</span></div>
+    <div><a href="../exercises/git/scenarios/make-scenario.sh">git/scenarios/</a><span>Script that generates each broken repository on demand</span></div>
+    <div><a href="../exercises/git/git-games.md">git/git-games.md</a><span>Conflict duel, git golf, blame detective</span></div>
+    <div><a href="../exercises/linux/terminal-scavenger-hunt.md">linux/scavenger hunt</a><span>Twelve questions, one command each</span></div>
+    <div><a href="../exercises/linux/bash-exercises.md">linux/bash-exercises.md</a><span>Five scripts, with a test runner</span></div>
+    <div><a href="../cheatsheets/">cheatsheets/</a><span>One printable page per track</span></div>
+    <div><a href="../TRAINER-NOTES.md">TRAINER-NOTES.md</a><span>Timing, live demos, common stumbles, how to run each game</span></div>
+    <div><span>Python 101.ipynb</span><span>The original notebook – run the cells alongside the slides</span></div>
+  </div>
+</section>
+
+<footer>
+  <p>Navigate a deck with the arrow keys. <code>o</code> opens the contents, <code>f</code> goes fullscreen. Print any deck to PDF from the browser – one slide per page.</p>
+</footer>
+
+</div>
